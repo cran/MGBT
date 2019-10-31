@@ -1,0 +1,410 @@
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  This package contains routines associated with identifying multiple
+#    low outliers in a set of studentized Gaussian data
+#
+#   Tim Cohn........21 Oct 2008
+#     revised.......22 Oct 2008 (TAC)
+#     revised.......24 Dec 2009 (TAC)
+#     revised.......18 Jan 2010 (TAC)
+#     revised.......18 Feb 2010 (TAC)
+#     revised.......29 Oct 2010 (TAC) (corrected variance of variance)
+#     revised.......26 Aug 2011 (TAC) (set MGBT to identify more than n/2 LOs)
+#     revised.......24 Aug 2011 (TAC) (MGBTnb added; only one pass)
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Orthogonal evaluation of p-value
+#
+#  Note:  This is a very tricky procedure that is documented in 39 pages
+#         of mathematical notes dated 12/16/09
+#         This is not for the faint of heart
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#
+#  Set up libraries and directories
+#
+# jfe comment out setwd
+# setwd("~/2010/EMA_low_outliers/")
+# setwd("~/2011/EMA_LowOutliers")
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Multiple Grubbs-Beck Test (MGBT)
+#    Identifies up to n/2 low outliers
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+
+MGBT <- function(Q,alpha1=0.01,alpha10=0.10,n2=floor(length(Q)/2)){
+      zt      <- sort(log10(pmax(1e-8,Q)))
+      n       <- length(zt)
+      pvalueW <-rep(-99,n2);w<-rep(-99,n2)
+      j1=0;j2=0
+    for(i in 1:n2) {
+       w[i]<-(zt[i]-mean(zt[(i+1):n]))/sqrt(var(zt[(i+1):n]))
+       pvalueW[i]<-KthOrderPValueOrthoT(n,i,w[i])$value
+       if(pvalueW[i]<alpha1){j1<-i;j2<-i}
+       if( (pvalueW[i]<alpha10) & (j2==i-1)){j2<-i}
+       }
+    if(j2==n2){
+      if(n2<length(Q)-5) {   # set a limit of at least 5 retained observations
+        print(paste(" Number of low outliers equals or exceeds limit of ",n2));
+        return(MGBT(Q,alpha1=0.01,alpha10=0.10,n2=length(Q)-5))} # try this
+      else
+        print("MGBT identifies too many low outliers; use caution and judgment")
+    }
+     return(list(klow=j2,pvalues=pvalueW,LOThresh=ifelse(j2>0,sort(Q)[j2+1],0)))
+}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Moments of observations above the threshold, xsi
+#
+gtmoms <- function(xsi,k){
+   H  <- function(xsi) dnorm(xsi)/(1-pnorm(xsi))
+   p  <- pnorm(xsi);
+   if(k == 0) return(1);
+   if(k == 1) return(H(xsi));
+   if(k > 1) return((k-1)*gtmoms(xsi,k-2)+H(xsi)*xsi^(k-1))
+   }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#  Conditional moments
+#    N.B. Moments employ only obs. above xsi
+#
+CondMomsZ <- function(n,r,xsi){
+  cbind( gtmoms(xsi,1) , (gtmoms(xsi,2)-gtmoms(xsi,1)^2)/(n-r) )
+  }
+
+CondMomsChi2 <- function(n,r,xsi){
+  mu <- gtmoms(xsi,1);
+  cbind(gtmoms(xsi,2) - mu^2 ,
+  V(n,r,pnorm(xsi))[2,2])
+  }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Covariance matrix of M and S^2
+#    Note that E is vector of expected values of X^k given X>qmin
+#
+V <- function(n,r,qmin){
+        n2 <- n-r
+      E<-sapply(1:4,function(i){gtmoms(qnorm(qmin),i)});
+	   cm      <- c(E[1],
+					E[2]-E[1]^2,
+					E[3]-3*E[2]*E[1]+2*E[1]^3,
+					E[4]-4*E[3]*E[1]+6*E[2]*E[1]^2-3*E[1]^4
+				   )
+      array(
+        c((E[2] - E[1]^2)/n2,
+        rep(
+          (E[3] - 3*E[1]*E[2] + 2*E[1]^3)/sqrt(n2*(n2-1))
+          ,2),
+          (cm[4]-cm[2]^2)/n2 + 2/((n2-1)*n2)*cm[2]^2),
+       dim=c(2,2))}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Expected values of M and S
+#
+EMS <- function(n,r,qmin){
+         zr       <- qnorm(qmin)
+         Em       <- gtmoms(zr,1);
+         momS2    <- CondMomsChi2(n,r,zr)
+           alpha  <- momS2[1]^2/momS2[2]
+           beta   <- momS2[2]/momS2[1]
+         Es       <- sqrt(beta)*exp(lgamma(alpha+0.5)-lgamma(alpha))
+         c(Em[1], Es)
+        }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Covariance matrix of M and S
+#
+VMS <- function(n,r,qmin){
+         E    <- sapply(1:2,function(i){gtmoms(qnorm(qmin),i)});
+         Es   <- EMS(n,r,qmin)[2]
+         Es2  <- E[2]-E[1]^2
+         V2   <- V(n,r,qmin)
+         array(c(
+                 V2[1,1],
+                 rep(V2[1,2]/(2*Es),2),
+                 Es2-(Es)^2
+                ),dim=c(2,2))
+        }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Monte Carlo experiment to test EMS and VMS functions
+#
+
+test_EMS <- function(nrep=1000,n=100,r=0,qr=0.2,ss=1){
+  set.seed(ss);Moms<-replicate(n=nrep,{x<-qnorm(runif(n-r,min=qr,max=1));c(mean(x),var(x))});xsi=qnorm(qr);
+   list(
+    MeanMS_obs  = c(mean(Moms[1,]),mean(sqrt(Moms[2,])),mean(Moms[2,])),
+    EMS         = c(EMS(n,r,qr),gtmoms(xsi,2) - gtmoms(xsi,1)^2),
+    CovMS2_obs  = cov(t(Moms)),
+    VMS2        = V(n,r,qr),
+    VMS_obs     = array(c(
+                    var(Moms[1,]),
+                    rep(cov(Moms[1,],sqrt(Moms[2,])),2),
+                    var(sqrt(Moms[2,]))),
+                  dim=c(2,2)),
+    VMS         = VMS(n,r,qr)
+   )
+}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Improved "integrate" function that de-vectorizes f(x)
+#
+integrateV <- function(
+          f, lower, upper, ..., subdivisions=100,
+          rel.tol = .Machine$double.eps^0.25, abs.tol = rel.tol,
+          stop.on.error = TRUE, keep.xy = FALSE, aux = NULL)
+           {f2<-function(x,...){sapply(x,f,...)}
+            integrate(f2,lower,upper,...,
+            subdivisions=100,rel.tol = .Machine$double.eps^0.25,
+            abs.tol = rel.tol,
+            stop.on.error = TRUE, keep.xy = FALSE, aux = NULL)
+           }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Function to compute p-value corresponding to k-th order statistic
+#     n    sample size
+#     r    number of truncated observations
+#     eta  "pseudo-studentized" magnitude of r-th smallest observation
+#           eta = (X[r]-mean(X[(r+1):n])/sqrt(var(X[(r+1):n]))
+#
+KthOrderPValueOrthoT <- function(n,r,eta){
+  integrateV(peta,lower=1e-7,upper=1-1e-7,n=n,r=r,eta=eta)
+   }
+peta <- function(pzr,n,r,eta){
+                   zr       <- qnorm(qbeta(pzr,shape1=r,shape2=n+1-r))
+                   CV       <- VMS(n,r,qmin=pnorm(zr))
+                   lambda   <- CV[1,2]/CV[2,2]
+                   etap     <- eta + lambda
+                   EMp      <- EMS(n,r,qmin=pnorm(zr))
+                   muMp     <- EMp[1]-lambda*EMp[2]
+                   SigmaMp  <- sqrt(CV[1,1] - CV[1,2]^2/CV[2,2]);
+                   momS2    <- CondMomsChi2(n,r,zr)
+                   shape    <- momS2[1]^2/momS2[2]
+                   scale    <- momS2[2]/momS2[1]
+                   sqrtS2   <- sqrt(momS2[1])
+                   df       <- 2*shape
+                   ncp      <- (muMp-zr)/SigmaMp
+                   q        <- -(sqrtS2/SigmaMp)*etap
+               (1 - pt(q,df=df, ncp=ncp, lower.tail = TRUE))
+     }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  This routine employs simple Gaussian quadrature to compute the integral
+#  (above) much more quickly. However, it is slightly less accurate for
+#  tail probabilities
+#
+KthOrderPValueOrthoTb <- function(n,r,eta,nterms=50){
+                   x    <-  gauss.quad.prob(nterms)
+                   sapply(x$nodes,peta,n=n,r=r,eta=eta) %*% x$weights
+     }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Inverse function:  Computing critical point given probability
+#    Note that initial guess is based on approximating integral by
+#         function value at 50%-ile.
+#
+CritK<-function(n,r,p){
+  guess1 = uniroot(function(eta)(peta(.5,n,r,eta)-p),
+           interval=c(-10,10))$root
+  uniroot(function(x,n,r) {KthOrderPValueOrthoT(n,r,x)$value-p},
+           interval=guess1+c(-1,1),n=n,r=r)$root
+  }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Monte Carlo computation of critical values for special cases
+#
+CritValuesMC <- function(
+    nrep        =   50,
+    kvs         =   c(1,3,0.25,0.5),
+    n           =   100,
+    test_quants =   c(0.01,0.10,0.50),
+    ndigits     =     3,
+    seed        =     1
+                                   )
+  {        set.seed(seed)
+           k_values = ifelse(kvs>=1,kvs,ceiling(n*kvs))
+     z  <- replicate(nrep,
+       {x<-sort(rnorm(n));
+        sapply(k_values,function(r){xr<-x[r];x2<-x[(r+1):n];
+       (xr-mean(x2))/sqrt(var(x2))}
+       )}
+     )
+  res<-round(apply(z,MARGIN=1,quantile,test_quants),ndigits)
+  colnames(res)<-k_values
+  res}
+
+#   n=100;nrep=100000;test_quants=c(.05,1);Vr=1:10
+#   z<-CritValuesMC(n=n,nrep=nrep,test_quants=test_quants)
+#   sapply(Vr,function(r)KthOrderPValueOrthoT(n,r,z[1,r])$value)
+#   sapply(Vr,function(r)KthOrderPValueOrthoT(n,r,z[2,r])$value)
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Monte Carlo experiment for distribution of k-th "pseudo-studentized"
+#    order statistic
+#
+testKthOrderPValueOrthoT <- function(
+    nrep        = 10000,
+    r           =     2,
+    n           =   100,
+    test_quants = c(0.05,0.1,0.5,0.9,0.95),
+    ndigits     =     3,
+    seed        =     1
+                                   )
+  {  set.seed(seed)
+     z  <- replicate(nrep,
+      {x<-sort(rnorm(n));xr<-x[r];x2<-x[(r+1):n];(xr-mean(x2))/sqrt(var(x2))}
+                    )
+     res <- sapply(quantile(z,test_quants),function(q)c(q,KthOrderPValueOrthoT(n,r,q)$value))
+     round(res,ndigits)
+  }
+
+
+#for(n in c(10,15,25,50,100,500)){for(r in 1:min(10,floor(n/2))) {print(c(n,r));print(testKthOrderPValueOrthoT(nrep=10^6,n=n,r=r))}}
+
+#  To get the MSE of the results
+# rr<-rep(0,10)
+#for(n in c(10,15,25,50,100,500))  {for(r in 1:min(10,floor(n/2))) {print(c(n,r));
+#for(seed in 1:10) {print({rr[i]=testKthOrderPValueOrthoT(nrep=10^4,n=n,r=r,seed=seed)};print(c("var",sqrt(var(rr/100)))}}
+
+
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  traditional Grubbs-Beck critical values for 10% test; JRS Approximation
+#
+.kngb   <- function(n){-0.9043+3.345*sqrt(log10(n))-0.4046*log10(n)}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  traditional Grubbs-Beck critical values for 10% test as in Bulletin 17B
+#
+critK10<-function(n) {if(min(n) <10 | max(n)>149)return(NA);    c(2.036,2.088,2.134,2.175,2.213,2.247,2.279,2.309,2.335,2.361,2.385,2.408,2.429,2.448,
+2.467,2.486,2.502,2.519,2.534,2.549,2.563,2.577,2.591,2.604,2.616,2.628,2.639,2.650,2.661,2.671,
+2.682,2.692,2.700,2.710,2.719,2.727,2.736,2.744,2.753,2.760,2.768,2.775,2.783,2.790,2.798,2.804,
+2.811,2.818,2.824,2.831,2.837,2.842,2.849,2.854,2.860,2.866,2.871,2.877,2.883,2.888,2.893,2.897,
+2.903,2.908,2.912,2.917,2.922,2.927,2.931,2.935,2.940,2.945,2.949,2.953,2.957,2.961,2.966,2.970,
+2.973,2.977,2.981,2.984,2.989,2.993,2.996,3.000,3.003,3.006,3.011,3.014,3.017,3.021,3.024,3.027,
+3.030,3.033,3.037,3.040,3.043,3.046,3.049,3.052,3.055,3.058,3.061,3.064,3.067,3.070,3.073,3.075,
+3.078,3.081,3.083,3.086,3.089,3.092,3.095,3.097,3.100,3.102,3.104,3.107,3.109,3.112,3.114,3.116,
+3.119,3.122,3.124,3.126,3.129,3.131,3.133,3.135,3.138,3.140,3.142,3.144,3.146,3.148)[n-9]}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  New Generalized Grubbs-Beck critical values for 10% test; TAC Approximation
+#
+  fw  <- function(n,w){n*w/((n-1)*sqrt((1/(n-2))*(n-1-(n/(n-1))*w^2)))}
+  fw1 <- function(n,w1){-sqrt(((n-1)^3*w1^2)/(n^2*(n-2)+w1^2*n*(n-1)))}
+GGBK  <-function(n) fw1(n,CritK(n,1,.1,-fw(n,critK10(n))))
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Comparing the approximations
+#
+#  n=10:149
+#  Ktrue = sapply(n,critK10)
+#  KJRS  = sapply(n,.kngb)
+#  KTAC  = sapply(n,GGBK)
+#  result<-data.frame(n=10:149,Kt=critK10(n))
+
+#
+#
+make_tab1 <- function(){
+  apply(CritValue10M,MARGIN=1,function(x){
+  print(c(x[1]," & ",x[2]," & ",x[3]," & ",x[4]," & ",x[5]," & ",x[6]," & ",x[7]," \\ "));
+  print(c(" & "," & ",
+          format(KthOrderPValueOrthoT(x[1],x[2],x[3])$value,digits=3,nsmall=3)," & ",
+          format(KthOrderPValueOrthoT(x[1],x[2],x[4])$value,digits=3,nsmall=3)," & ",
+          format(KthOrderPValueOrthoT(x[1],x[2],x[5])$value,digits=3,nsmall=3)," & ",
+          format(KthOrderPValueOrthoT(x[1],x[2],x[6])$value,digits=3,nsmall=3)," & ",
+          format(KthOrderPValueOrthoT(x[1],x[2],x[7])$value,digits=3,nsmall=3)," \\ "))
+    }
+  )
+  }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Multiple Grubbs Beck test (Cohn et al., 2011)
+#     p. 169
+MGB <- function(x,k,n=length(x)){
+           y=sort(x);(y[k]-mean(y[(k+1):n]))/sqrt(var(y[(k+1):n]))}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Alternative test: N3 from Barnett & Lewis (adjusted to look for Low Outliers
+#     p. 169
+BL_N3 <- function(x,k,n=length(x)){
+           y=sort(x);(sum(y[1:k])-k*mean(y))/sqrt(var(y))}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Alternative test: RST from Rosner (1975a, TNMX 18(2) pp. 221-227)
+#  (adjusted to look only for Low Outliers
+#     p. 169
+RST <- function(x,k,n=length(x)){
+           y=sort(x);(y[k]-mean(y[(k+1):(n-k)]))/sqrt(var(y[(k+1):(n-k)]))}
+
+testMGBvsN3<-function(n=100,maxr=n/2,nrep=10000){
+  for(r in 1:maxr) {
+    set.seed(123457);
+    res1=replicate(nrep,
+      {x=sort(rnorm(n));c(MGB(x,r),BL_N3(x,r),RST(x,r))}
+    );
+        r1=rank(res1[1,]);
+        r2=rank(res1[2,]);
+        r3=rank(res1[3,]);
+        plot(r1,r2);
+        abline(v=quantile(r1,.1));
+        abline(h=quantile(r2,.1));
+        print(c('BL  ',r,cor(r1,r2),mean( (r1<=quantile(r1,.1)) & (r2<=quantile(r2,.1)))))
+        plot(r1,r3);
+        abline(v=quantile(r1,.1));
+        abline(h=quantile(r3,.1));
+        print(c('RST ',r,cor(r1,r3),mean( (r1<=quantile(r1,.1)) & (r3<=quantile(r3,.1)) )))}
+}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Multiple Grubbs-Beck Test (MGBTnb)
+#    This eliminates the backup procedure
+#    Added for JL/JRS study 24 Aug 2012 (TAC)
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+
+MGBTnb <- function(Q,alpha1=0.01,alpha10=0.10,n2=floor(length(Q)/2)){
+      zt      <- sort(log10(pmax(1e-8,Q)))
+      n       <- length(zt)
+      pvalueW <-rep(-99,n2);w<-rep(-99,n2)
+      j1=0;j2=0
+    for(i in 1:n2) {
+       w[i]<-(zt[i]-mean(zt[(i+1):n]))/sqrt(var(zt[(i+1):n]))
+       pvalueW[i]<-KthOrderPValueOrthoT(n,i,w[i])$value
+       if(pvalueW[i]<alpha1){j1<-i;j2<-i}
+       }
+    if( (pvalueW[1]<alpha10) & (j2==0)){j2<-1}
+    if(j2==n2){
+      if(n2<length(Q)-5) {   # set a limit of at least 5 retained observations
+        print(paste(" Number of low outliers equals or exceeds limit of ",n2));
+        return(MGBT(Q,alpha1=0.01,alpha10=0.10,n2=length(Q)-5))} # try this
+      else
+        print("MGBT identifies too many low outliers; use caution and judgment")
+    }
+     return(list(klow=j2,pvalues=pvalueW,LOThresh=ifelse(j2>0,sort(Q)[j2+1],0)))
+}
+

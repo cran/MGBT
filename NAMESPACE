@@ -1,0 +1,37 @@
+importFrom("stats", "dnorm", "integrate", "pnorm", "pt", "qbeta",
+                    "qnorm", "runif", "uniroot", "var")
+importFrom("graphics", "plot", "points", "lines", "rug")
+importFrom("graphics", "axTicks", "axis", "legend", "mtext", "par", "polygon")
+importFrom("grDevices", "grey")
+importFrom("utils", "write.table")
+#-----------------------------------------------
+# Following is not explicitly needed because Suggests: lmomco is used
+# and not Depends:
+#importFrom("lmomco", "add.log.axis", "f2flo", "lmoms",
+#                     "parpe3", "quape3", "T2prob", "x2xlo")
+#-----------------------------------------------
+export(ASlo)
+export(BLlo)
+export(critK10)
+export(CondMomsZ)
+export(CondMomsChi2)
+export(CritK)
+export(EMS)
+export(gtmoms)
+export(GGBK)
+export(RthOrderPValueOrthoT)
+export(MGBT)
+export(MGBT17c)
+export(MGBT17c.verb)
+export(MGBTcohn2016)
+export(MGBTcohn2013)
+export(MGBTnb)
+export(MGBTcohn2011)
+export(peta)
+export(RSlo)
+export(V)
+export(VMS)
+export(makeWaterYear)
+export(plotFFQevol)
+export(plotPeaks)
+export(splitPeakCodes)

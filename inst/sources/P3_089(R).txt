@@ -1,0 +1,1800 @@
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  This package contains three categories of routines
+#     1) Class creation, printing, and plotting for EMA
+#     2) EMA computational routines
+#     3) General purpose routines related to the Pearson III distribution
+#
+#  Note: This is a major update of previous versions of this file
+#        Much of the secondary/unneeded content has been deleted
+#
+#   Tim Cohn........30 Nov 2005
+#           ........25 Aug 2006
+#           ........20 Sep 2006
+#           ........12 Jan 2007
+#           ........02 Jul 2008
+#           ........24 Sep 2010
+#           ........16 Dec 2010
+#           ........05 Apr 2012  Changed default CI width to 0.90
+#           ........15 Oct 2015  added warning message to .Sigma
+#           ........21 Oct 2015  fixed error in Mn2mVarB (crash g>2.2)
+#           ........23 Oct 2015  added fspline for Mn2mVarB and .Sigma
+#           ........30 Oct 2015  fixed .Sigma for abs(g)>2
+#           ........12 Nov 2015  all Wilson-Hilferty approximations replaced
+#                                  with (more accurate) cubic splines
+#           ........23 Jun 2016  Re-write
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#   The following will demonstrate the technique (type "test()" after
+#   issuing the source(file="filename.r") command
+#
+  test<-function(nobs=100,g=0){
+    set.seed(1)
+    q<-exp(rP3(nobs,c(5,1.24^2,g)))
+    tl<-c(rep(150,50),rep(0,50))
+    qu<-pmax(q,tl)
+    ql<-ifelse(q<tl,1.e-20,q)
+     print('entering makeFLOODdata')
+    ema1<-makeFLOODdata(ql=ql,qu=qu)
+     print('entering makeEMAresult')
+    ema2<-makeEMAresult(ema1)
+    plot(ema2)
+    print(ema2)
+  }
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+  library(MASS)
+  library(statmod)
+  library(numDeriv)
+#
+#=%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%=#
+#|..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-|#
+#|                                                                           |#
+#|   CLASS CREATION ROUTINES                                                 |#
+#|                                                                           |#
+#|..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-|#
+#=%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%=#
+#=%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%=#
+#|..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-|#
+#|                                                                           |#
+#|   FLOODdata class                                                         |#
+#|                                                                           |#
+#|..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-|#
+#=%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%=#
+#
+setClass("FLOODdata",
+  representation(
+     n                 = "numeric",
+     year              = "integer",
+     month             = "integer",
+     day               = "integer",
+     wateryear         = "numeric",
+     ql                = "numeric",
+     qu                = "numeric",
+     logql             = "numeric",
+     logqu             = "numeric",
+     typeSystematic    = "logical",
+     nS                = "numeric",
+     typeInterval      = "logical",
+     nI                = "numeric",
+     typeNonExceedance = "logical",
+     LowOutlier        = "logical",
+     HighOutlier       = "logical",
+     qtl               = "numeric",
+     qtu               = "numeric",
+     logqtl            = "numeric",
+     logqtu            = "numeric",
+     tl                = "numeric",
+     tu                = "numeric",
+     no                = "numeric",
+     RegionalSD        = "numeric",
+     RegionalSDMSE     = "numeric",
+     RegionalVar       = "numeric",
+     RegionalVarMSE    = "numeric",
+     RegionalSkew      = "numeric",
+     RegionalSkewMSE   = "numeric"
+   )
+ )
+validFLOODdata<-function(object)
+{
+  len<-length(object@ql)
+  if(
+     length(object@year)  != len ||
+     length(object@month) != len ||
+     length(object@day)   != len ||
+     length(object@qu)    != len ||
+     length(object@logql) != len ||
+     length(object@logqu) != len ||
+     length(object@qtl)   != len ||
+     length(object@qtu)   != len ||
+     length(object@logqtl)!= len ||
+     length(object@logqtu)!= len ||
+     length(object@typeSystematic)    != len ||
+     length(object@typeInterval)      != len ||
+     length(object@LowOutlier)        != len ||
+     length(object@HighOutlier)       != len ||
+     length(object@typeNonExceedance) != len
+  ) return("mismatch in lengths of slots")
+  if(object@RegionalSkewMSE<0) return("negative mse on skew")
+  else return(TRUE)
+}
+setValidity("FLOODdata",validFLOODdata)
+
+print.FLOODdata<-function(o)
+{
+  cat("\nEMA Data\n")
+  cat("\n  Number of Obs:     ",length(o@ql),"\n")
+  cat(paste("  Regional Skew:     ",o@RegionalSkew,"\n"))
+  cat(c("  Regional Skew MSE: ",o@RegionalSkewMSE,"\n\n\n"))
+    tab<-cbind(o@year,o@month,o@day,o@wateryear,
+               o@ql,o@qu,o@qtl,o@qtu)
+  rownames(tab)<- rep("   ",dim(tab)[1])
+  colnames(tab)<-c("Year","Month","Day","WYear"," < Q "," Q > "," Qtl "," Qtu ")
+  print(signif(tab,4))
+}
+
+makeFLOODdata<-function(
+    ql,
+    qu=ql,
+    typeSystematic=(ql==qu),
+    year=as.integer(1:length(ql)),
+    month=as.integer(rep(1,length(ql))),
+    day=as.integer(rep(1,length(ql))),
+    wateryear=ifelse(month>9,year+1,year),
+    qtl=makeQTL(ql,qu),
+    qtu=rep(1e99,length(ql)),
+    RegionalSD=-99,RegionalSDMSE=1e10,
+    RegionalSkew=-99,RegionalSkewMSE=0.3025,
+    zero=1e-20)
+  {
+    n<-length(ql)
+    ct<-.countlevel(qtl,qtu)
+  new(
+     "FLOODdata",
+     n                    = n,
+     year                 = year,
+     month                = month,
+     day                  = day,
+     wateryear            = wateryear,
+     ql                   = pmax(ql,zero),
+     qu                   = qu,
+     logql                = log(ql),
+     logqu                = log(qu),
+     typeSystematic       = typeSystematic,
+     nS                   = sum(typeSystematic),
+     typeInterval         = (ql<qu),
+     typeNonExceedance    = (qu<=qtl),
+     nI                   = sum(qu<=qtl),
+     LowOutlier           = rep(NA,n),HighOutlier=rep(NA,n),
+     qtl                  = qtl,
+     qtu                  = qtu,
+     logqtl               = log(qtl),
+     logqtu               = log(qtu),
+     tl                   = log(ct$rl),
+     tu                   = log(ct$ru),
+     no                   = ct$rn,
+     RegionalSD           = RegionalSD,
+     RegionalSDMSE        = RegionalSDMSE,
+     RegionalVar          = RegionalSD^2,
+     RegionalVarMSE       = (4*RegionalSD^2)*RegionalSDMSE,
+     RegionalSkew         = RegionalSkew,
+     RegionalSkewMSE      = RegionalSkewMSE
+     )
+  }
+
+makeQTL <- function(ql,qu,zero=1e-10)
+{
+  qtl <- rep(0,length(ql))
+  for(i in (length(ql)-1):1) {
+     qtl[i] <- ifelse(ql[i]<=zero,qu[i],min(qtl[i+1],qu[i]))
+    }
+  pmax(qtl,1e-99)
+}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  plot.EMA
+#
+#  plots standard flood frequency plots for FLOODdata and EMAresult objects
+#
+#   Tim Cohn........20 Sep 2006
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   o            FLOODdata   input data (type EMAresult also accepted)
+#   pq           vector    exceedance probabilities used to create plot
+#   xlim         vector    limits on x-axis (defaults likely OK)
+#   ylim         vector    limits on y-axis (defaults likely OK)
+#   maintitle    text      main title for plot
+#                            (default: "Time Series of Annual Peaks")
+#   subtitle     text      subtitle for plot (default: years)
+#   title        text      title for plot (default: "Fitted Frequency Curve")
+#   xlab         text      x label for plot (default: "Exceedance Probability")
+#   ylab         text      y label for plot
+#                            (default: "Annual Peak Discharge [cfs]")
+#   PlotData     logical   T/F -- should data be plotted? (default: Yes)
+#   PlotFit      logical   T/F -- should EMA-fitted frequency curve be plotted?
+#   PlotCI       logical   T/F -- should EMA-computed confidence
+#                            intervals be plotted?
+#   PlotFitCol   text      Color for fitted frequency curve
+#   PlotIntCol   text      Color for lines indicating interval values
+#   parA         scalar    plotting position parameter to use with data
+#   parG         scalar    graphical parameter for probability paper
+#
+#   ...                    other parameters to be passed to plot calls
+#
+#   (result)     plot
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+plot.EMA<-function(
+    o,
+    pq=c(0.995,0.99,0.95,0.9,0.8,.50,0.2,0.1,0.04,0.02,0.01,0.002),
+    xlim=qP3(c((1-max(pq))/2,(1-min(pq)/2)),c(0,1,parG)),
+    ylim=c(min(qu)/(max(ql)/min(qu))^0.1,max(ql)*(max(ql)/min(qu))^0.1),
+    maintitle="Fitted Frequency Curve",
+    subtitle=paste(min(o@wateryear)," - ",max(o@wateryear)),
+    title=c(maintitle,subtitle),
+    xlab="Exceedance Probability",
+    ylab="Annual Peak Discharge [cfs]",
+    PlotData=F,
+    PlotFit=F,
+    PlotCI=F,
+    PlotInterval=T,
+    PlotFitCol='red',
+    PlotIntCol='green',
+    parA=0.5,
+    parG=0.1,
+    ...
+  )
+{
+      pp1<-pP3(expctP3(lbg=o@logql,ubg=o@logqu,m=o@moms),m=o@moms)
+        pp2<-numeric()
+      for(l in levels(as.factor(pp1))){
+        idx<-(l==pp1);
+        lbt<-pP3(o@logql[idx],o@moms)
+        ubt<-pP3(o@logqu[idx],o@moms)
+        pp2[idx]<-lbt+(ubt-lbt)*ppoints(sum(idx),a=parA)}
+      qord<-order(pp2)
+    ql<-o@ql[qord];
+    qu<-o@qu[qord];
+    Quantiles<-qP3(ppoints(length(ql),a=parA),c(0,1,parG));
+if(PlotData){
+#    plot(Quantiles[ql==qu],ql[ql==qu],log="y",xlim=xlim,ylim=ylim,ylab=ylab,
+#    xlab=xlab,xaxt="n",...)
+#    par(new=TRUE)
+#     For interval values
+    if(PlotInterval){
+      plot(Quantiles[ql!=qu],ql[ql!=qu],log="y",xlim=xlim,ylim=ylim,ylab=ylab,
+      xlab=xlab,xaxt="n",pch=24,...)
+      par(new=TRUE)
+      plot(Quantiles[ql!=qu],qu[ql!=qu],log="y",xlim=xlim,ylim=ylim,ylab=ylab,
+      xlab=xlab,xaxt="n",pch=25,...)
+      abline(v=qP3(1-pq,c(0,1,parG)));
+      par(new=TRUE)
+      for(i in 1:length(ql)) {if(ql[i]!=qu[i]) {
+        segments(Quantiles[i],ql[i],Quantiles[i],qu[i],col=PlotIntCol);
+        par(new=TRUE)}}
+    par(new=TRUE)
+    }
+#     For point values
+    plot(Quantiles[ql==qu],ql[ql==qu],log="y",xlim=xlim,ylim=ylim,ylab=ylab,
+    xlab=xlab,xaxt="n",...)
+    axis(side=1,at=qP3(1-pq,c(0,1,parG)),label=as.character(round(pq,3)))
+    par(new=TRUE)
+  }
+
+if(PlotFit){
+    Quantiles<-qP3(o@pNonExceedance,c(0,1,parG));
+    plot(Quantiles,o@QestP,log="y",xlim=xlim,ylim=ylim,ylab="",xlab="",type="l",xaxt="n",
+      col=PlotFitCol);
+    par(new=TRUE)
+  }
+
+if(PlotCI){
+    Quantiles<-qP3(o@pNonExceedance,c(0,1,parG));
+    plot(Quantiles,o@CI[,1],log="y",xlim=xlim,ylim=ylim,ylab="",xlab="",type="l",xaxt="n",
+      col="blue");
+    par(new=TRUE)
+    plot(Quantiles,o@CI[,2],log="y",xlim=xlim,ylim=ylim,ylab="",xlab="",type="l",xaxt="n",col="blue");
+    par(new=TRUE)
+  }
+
+title(title)
+}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  plotTS
+#
+#  plots standard flood frequency plots for FLOODdata and EMAresult objects
+#
+#   Tim Cohn........17 Jan 2007
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   o            FLOODdata   input data (type EMAresult also accepted)
+#   xlim         vector    limits on x-axis (defaults likely OK)
+#   ylim         vector    limits on y-axis (defaults likely OK)
+#   maintitle    text      main title for plot (default:
+#                           "Time Series of Annual Peaks")
+#   subtitle     text      subtitle for plot (default: years)
+#   title        text      title for plot (default: "Fitted Frequency Curve")
+#   xlab         text      x label for plot (default: "Exceedance Probability")
+#   ylab         text      y label for plot (default:
+#                            "Annual Peak Discharge [cfs]")
+#   CensDatCol   text      default color for censored data
+#
+#   ...                    other parameters to be passed to plot calls
+#
+#   (result)     plot
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+plotTS<-function(
+    o,
+    xlim=range(o@wateryear),
+    ylim=c(min(o@qu)/(max(o@ql)/min(o@qu))^0.1,max(o@ql)*(max(o@ql)/min(o@qu))^0.1),
+    maintitle="Time Series of Annual Peaks",
+    subtitle=paste(min(o@wateryear)," - ",max(o@wateryear)),
+    title=c(maintitle,subtitle),
+    xlab="Water Year",
+    ylab="Annual Peak Discharge [cfs]",
+    CensDatCol="red",
+    ...
+  )
+{
+    plot(o@wateryear[o@ql==o@qu],o@ql[o@ql==o@qu],log="y",xlim=xlim,ylim=ylim,ylab=ylab,
+    xlab=xlab,...)
+    par(new=TRUE)
+#     For interval values
+    plot(o@wateryear[o@ql!=o@qu],o@ql[o@ql!=o@qu],log="y",xlim=xlim,ylim=ylim,ylab=ylab,
+    xlab=xlab,pch=24,...)
+    par(new=TRUE)
+    plot(o@wateryear[o@ql!=o@qu],o@qu[o@ql!=o@qu],log="y",xlim=xlim,ylim=ylim,ylab=ylab,
+    xlab=xlab,pch=25,...)
+    par(new=TRUE)
+    for(i in 1:length(o@ql)) {if(o@ql[i]!=o@qu[i]) {
+      segments(o@wateryear[i],o@ql[i],o@wateryear[i],o@qu[i],col=CensDatCol);
+      par(new=TRUE)}}
+
+title(title)
+}
+
+# delete the following line unless it turns our to be important somewhere else
+# uniform<-function(n=1,a=0,b=1){x<-0.618034*(1:n);a+(b-a)*(x-floor(x))}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  plot.FLOODdata
+#
+#  plots standard flood frequency plots for FLOODdata Class
+#
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+plot.FLOODdata <- function(o,PlotData=T,...) plot.EMA(o,PlotData=PlotData,...)
+
+#=%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%=#
+#|..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-|#
+#|                                                                           |#
+#|   EMAresult Class                                                         |#
+#|                                                                           |#
+#|..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-|#
+#=%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%=#
+#
+setClass("EMAresult",
+  contains                  = "FLOODdata",
+  representation(
+     LowOutlierTest         = "character",
+     PILFOutlierCritValue   = "numeric",
+     PILFOutlierThreshold   = "numeric",
+     nPILFOutlier           = "numeric",
+     PILFpvalues            = "numeric",
+     moms                   = "numeric",
+     moms10                 = "numeric",
+     pExceedance            = "numeric",
+     ReturnPeriod           = "numeric",
+     pNonExceedance         = "numeric",
+     QestP                  = "numeric",
+     CI                     = "array",
+     CvYsp                  = "array"
+  )
+)
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  plotB
+#
+#  plots standard flood frequency plots for FLOODdata Classs
+#
+#   Tim Cohn........20 Sep 2006
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   o_in         FLOODdata   input data (type EMAresult also accepted)
+#
+#   o            EMAresult output data
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+plotB <- function(o,...) {
+  opar    <-  par()$mfrow;
+  par(mfrow=c(1,2))
+  plotTS(o,...)
+  plot(o,...)
+  par(mfrow=opar)
+}
+
+validEMAresult<-function(object)
+{
+  return(TRUE)
+}
+setValidity("EMAresult",validEMAresult)
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  makeEMAresult
+#
+#  computes EMA frequency curve for FLOODdata Classs
+#
+#   Tim Cohn........20 Sep 2006
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   o_in         FLOODdata   input data (type EMAresult also accepted)
+#
+#   o            EMAresult output data
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+makeEMAresult<-function(
+       o_in,
+       pq=1-c(0.995,0.99,0.95,0.9,0.8,0.5,0.2,0.1,0.04,0.02,0.01,0.005,0.002),
+       LowOutlierTest="MGBT",
+       eps=0.90
+       )
+  {        pq                <- sort(pq)
+
+# Apply low-outlier/PILF test
+       o <- {if(LowOutlierTest=="GBT") GBTest(o_in) else
+             if(LowOutlierTest=="MGBT") MGBTest(o_in) else
+             o_in}
+             o@LowOutlierTest  <- LowOutlierTest
+#
+           QestP             <- numeric()
+           CI                <- array(NA,dim<-c(length(pq),2))
+           CvYsp             <- array(NA,dim<-c(length(pq),2,2))
+       for(i in 1:length(pq)){
+           em                <- ema(o,quant=pq[i],JustMoms=F,eps=0.90)
+           QestP[i]          <- em$qp
+           CI[i,]            <- em$ci
+           CvYsp[i,,]        <- em$cvypsyp
+        }
+# ensure consistency of CIs (i.e. fix problems related to non-linearity in extrapolations)
+      if(length(pq)>2){
+       for(i in (1:length(pq))[pq>0.5]) CI[i,] <- pmax(CI[i,],CI[i-1,])
+       for(i in (1:length(pq))[pq<0.5]) CI[i,] <- pmin(CI[i,],CI[i+1,])
+      }
+
+        r                        <-  as(o,"EMAresult")
+        r@moms                   <-  em$moms
+        r@moms10                 <-  em$moms/c(log(10),log(10)^2,1)
+        r@pExceedance            <-  1-pq
+        r@ReturnPeriod           <-  1/(1-pq)
+        r@pNonExceedance         <-  pq
+        r@QestP                  <-  QestP
+        r@CI                     <-  CI
+        r@CvYsp                  <-  CvYsp
+   r
+}
+
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  print.EMAresult
+#
+#  prints flood frequency table for EMAresult Class
+#    -- includes 95% confidence intervals
+#    -- also applies Grubb-Beck test for low outliers
+#        N.B. Low outliers are recoded as "<" next higher observed value
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+print.EMAresult<-function(o)
+{
+  cat("\nEMA Results\n")
+  cat("\n  Number of Obs:     ",length(o@ql),"\n")
+  cat(paste("  Regional Skew:     ",o@RegionalSkew,"\n"))
+  cat(c("  Regional Skew MSE: ",o@RegionalSkewMSE,"\n"))
+  cat(c("  Moments (base e):  ",signif(c(o@moms[1],sqrt(o@moms[2]),o@moms[3]),4),"\n"))
+  cat(c("  Moments (base 10): ",signif(c(o@moms10[1],sqrt(o@moms10[2]),o@moms10[3]),4),"\n"))
+  cat(c("  PILF (LO) Test: ",   o@LowOutlierTest,"\n"))
+  cat(c("  PILF (LO) CritV:   ",signif(o@PILFOutlierCritValue ,4),"\n"))
+  cat(c("  PILF (LO) Thr:   ",signif(o@PILFOutlierThreshold ,4),"\n"))
+  cat(c("  Number PILF (LO):     ",signif(o@nPILFOutlier ,4),"\n\n\n"))
+    tab<-cbind(o@pExceedance,o@ReturnPeriod,
+             o@pNonExceedance,o@QestP,o@CI[,1],o@CI[,2])
+  rownames(tab)<- rep("   ",dim(tab)[1])
+  colnames(tab)<-c("P[Q>q]"," T ","P[Q<q]","Q(P)"," < CI "," CI > ")
+  print(signif(tab,3))
+}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  plot.EMAresult
+#
+#  plots flood frequency plots for EMAresult Class
+#    -- includes fitted line and 95% confidence intervals
+#    -- also applies Grubb-Beck test for low outliers
+#        N.B. Low outliers are recoded as "<" next higher observed value
+#
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+plot.EMAresult <- function(o,PlotFit=T,PlotCI=T,parG=o@moms[3],...){
+   plot.FLOODdata(o,PlotFit=PlotFit,PlotCI=PlotCI,parG=parG,...)
+ }
+
+
+#=%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%=#
+#|..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-|#
+#|                                                                           |#
+#|   Grubbs-Beck Low Outlier Test                                            |#
+#|                                                                           |#
+#|                                                                           |#
+#|  .kngb -- Grubbs-Beck test for low outliers; provides critical point       |*
+#|                                                                           |#
+#|   Tim Cohn........27 May 2004                                             |#
+#|           ........10 Dec 2004                                             |#
+#|                                                                           |#
+#|   arguments    type      definition                                       |#
+#|   ---------    ----      ----------                                       |#
+#|   o            EMAresult object of EMA-related things                     |#
+#|   n            integer   number of observations                           |#
+#|                                                                           |#
+#|..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-|#
+#=%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%=#
+#
+      .kngb   <- function(n){-0.9043+3.345*sqrt(log10(n))-0.4046*log10(n)}
+#
+# N.B. GB Test employs best estimates of parameters including censored obs
+#         for computing sample mean and variance
+#
+GBTest <- function(o_in){
+     {if(o_in@nS <= 5) {cat("Low Outlier Test Requires 5 Systematic Obs. (GBTest)");return()}
+         em<-ema(o_in,JustMoms=T)
+         PILFOutlierCritValue  <- exp(em$moms[1]-sqrt(em$moms[2])*.kngb(o_in@nS))
+#         p <- .m2p(em$moms);
+         PILFOutlierThreshold  <- min(o_in@ql[o_in@ql>PILFOutlierCritValue ])
+         test <- (o_in@qu < PILFOutlierThreshold )
+     }
+     o                         <- as(o_in,"EMAresult")
+       o@PILFOutlierCritValue  <- PILFOutlierCritValue
+       o@PILFOutlierThreshold  <- PILFOutlierThreshold
+       o@nPILFOutlier          <- sum(test)
+       o@LowOutlier            <- test
+       o@qu                    <- ifelse(test,PILFOutlierThreshold , o@qu)
+       o@ql                    <- ifelse(test,1e-99,o@ql)
+       o@logqu                 <- log(ifelse(test,PILFOutlierThreshold , o@qu))
+       o@logql                 <- log(ifelse(test,1e-99,o@ql))
+
+# iterate test only once (TAC 25 Aug 2007)
+#       if(o@nPILFOutlier >0) {o<-GBTest(o)}
+
+    o
+ }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Multiple Grubbs-Beck Test (MGBTest)
+#
+#    Modified 28 Jun 2016 to reflect MGBT [Stedinger, Cohn, etc.]
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+MGBTest <- function(o_in){
+  if(o_in@nS <= 9) {cat("MGBT Requires 10 Systematic Obs. (MGBTest)");return()}
+  oMGBT <- MGBT(Q=o_in@qu[o_in@typeSystematic])
+  PILFOutlierThreshold  <- oMGBT$LOThresh
+  test <-  (o_in@qu < PILFOutlierThreshold )
+#
+  o                       <- as(o_in,"EMAresult")
+  o@PILFOutlierCritValue  <- PILFOutlierThreshold
+  o@PILFOutlierThreshold  <- PILFOutlierThreshold
+  o@nPILFOutlier          <- oMGBT$klow
+  o@PILFpvalues           <- oMGBT$pvalues
+  o@LowOutlier            <- test
+  o@qu                    <- ifelse(test,PILFOutlierThreshold , o@qu)
+  o@ql                    <- ifelse(test,1e-99,o@ql)
+  o@logqu                 <- log(ifelse(test,PILFOutlierThreshold , o@qu))
+  o@logql                 <- log(ifelse(test,1e-99,o@ql))
+#
+    o
+ }
+
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Multiple Grubbs-Beck Test (MGBT)
+#    Identifies up to n/2 low outliers
+#    Modified 28 Jun 2016 to reflect MGBT [Stedinger, Cohn, etc.]
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+MGBT <- function(Q,Alphaout=0.005,Alphazeroin=0.10,n2=floor(length(Q)/2)){
+      zt      <- sort(log10(pmax(1e-8,Q)))
+      n       <- length(zt)
+      pvalueW <-rep(-99,n2);w<-rep(-99,n2)
+      j1=0;j2=0
+    for(i in 1:n2) {
+       w[i]<-(zt[i]-mean(zt[(i+1):n]))/sqrt(var(zt[(i+1):n]))
+       pvalueW[i]<-KthOrderPValueOrthoT(n,i,w[i])$value
+       if(pvalueW[i]<Alphaout){j1<-i;j2<-i}
+       if( (pvalueW[i]<Alphazeroin) & (j2==i-1)){j2<-i}
+       }
+    return(list(klow=j2,pvalues=pvalueW,LOThresh=ifelse(j2>0,sort(Q)[j2+1],0)))
+}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Moments of observations above the threshold, xsi
+#
+gtmoms <- function(xsi,k){
+   H  <- function(xsi) dnorm(xsi)/(1-pnorm(xsi))
+   p  <- pnorm(xsi);
+   if(k == 0) return(1);
+   if(k == 1) return(H(xsi));
+   if(k > 1) return((k-1)*gtmoms(xsi,k-2)+H(xsi)*xsi^(k-1))
+   }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#  Conditional moments
+#    N.B. Moments employ only obs. above xsi
+#
+CondMomsZ <- function(n,r,xsi){
+  cbind( gtmoms(xsi,1) , (gtmoms(xsi,2)-gtmoms(xsi,1)^2)/(n-r) )
+  }
+
+CondMomsChi2 <- function(n,r,xsi){
+  mu <- gtmoms(xsi,1);
+  cbind(gtmoms(xsi,2) - mu^2 ,
+  V(n,r,pnorm(xsi))[2,2])
+  }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Covariance matrix of M and S^2
+#    Note that E is vector of expected values of X^k given X>qmin
+#
+V <- function(n,r,qmin){
+        n2 <- n-r
+      E<-sapply(1:4,function(i){gtmoms(qnorm(qmin),i)});
+	   cm      <- c(E[1],
+					E[2]-E[1]^2,
+					E[3]-3*E[2]*E[1]+2*E[1]^3,
+					E[4]-4*E[3]*E[1]+6*E[2]*E[1]^2-3*E[1]^4
+				   )
+      array(
+        c((E[2] - E[1]^2)/n2,
+        rep(
+          (E[3] - 3*E[1]*E[2] + 2*E[1]^3)/sqrt(n2*(n2-1))
+          ,2),
+          (cm[4]-cm[2]^2)/n2 + 2/((n2-1)*n2)*cm[2]^2),
+       dim=c(2,2))}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Expected values of M and S
+#
+EMS <- function(n,r,qmin){
+         zr       <- qnorm(qmin)
+         Em       <- gtmoms(zr,1);
+         momS2    <- CondMomsChi2(n,r,zr)
+           alpha  <- momS2[1]^2/momS2[2]
+           beta   <- momS2[2]/momS2[1]
+         Es       <- sqrt(beta)*exp(lgamma(alpha+0.5)-lgamma(alpha))
+         c(Em[1], Es)
+        }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Covariance matrix of M and S
+#
+VMS <- function(n,r,qmin){
+         E    <- sapply(1:2,function(i){gtmoms(qnorm(qmin),i)});
+         Es   <- EMS(n,r,qmin)[2]
+         Es2  <- E[2]-E[1]^2
+         V2   <- V(n,r,qmin)
+         array(c(
+                 V2[1,1],
+                 rep(V2[1,2]/(2*Es),2),
+                 Es2-(Es)^2
+                ),dim=c(2,2))
+        }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Improved "integrate" function that de-vectorizes f(x)
+#
+integrateV <- function(
+          f, lower, upper, ..., subdivisions=100,
+          rel.tol = .Machine$double.eps^0.25, abs.tol = rel.tol,
+          stop.on.error = TRUE, keep.xy = FALSE, aux = NULL)
+           {f2<-function(x,...){sapply(x,f,...)}
+            integrate(f2,lower,upper,...,
+            subdivisions=100,rel.tol = .Machine$double.eps^0.25,
+            abs.tol = rel.tol,
+            stop.on.error = TRUE, keep.xy = FALSE, aux = NULL)
+           }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Function to compute p-value corresponding to k-th order statistic
+#     n    sample size
+#     r    number of truncated observations
+#     eta  "pseudo-studentized" magnitude of r-th smallest observation
+#           eta = (X[r]-mean(X[(r+1):n])/sqrt(var(X[(r+1):n]))
+#
+KthOrderPValueOrthoT <- function(n,r,eta){
+  integrateV(peta,lower=1e-7,upper=1-1e-7,n=n,r=r,eta=eta)
+   }
+peta <- function(pzr,n,r,eta){
+                   zr       <- qnorm(qbeta(pzr,shape1=r,shape2=n+1-r))
+                   CV       <- VMS(n,r,qmin=pnorm(zr))
+                   lambda   <- CV[1,2]/CV[2,2]
+                   etap     <- eta + lambda
+                   EMp      <- EMS(n,r,qmin=pnorm(zr))
+                   muMp     <- EMp[1]-lambda*EMp[2]
+                   SigmaMp  <- sqrt(CV[1,1] - CV[1,2]^2/CV[2,2]);
+                   momS2    <- CondMomsChi2(n,r,zr)
+                   shape    <- momS2[1]^2/momS2[2]
+                   scale    <- momS2[2]/momS2[1]
+                   sqrtS2   <- sqrt(momS2[1])
+                   df       <- 2*shape
+                   ncp      <- (muMp-zr)/SigmaMp
+                   q        <- -(sqrtS2/SigmaMp)*etap
+               (1 - pt(q,df=df, ncp=ncp, lower.tail = TRUE))
+     }
+
+
+
+#=%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%=#
+#|..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-|#
+#|                                                                           |#
+#|   EMA FUNCTION ROUTINES                                                   |#
+#|                                                                           |#
+#|..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-..-|#
+#=%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%=#
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  ema
+#
+#  computes ema moments, quantiles, and confidence intervals with
+#    weighted regional skew
+#
+#   Tim Cohn........25 Oct 2005
+#
+#   arguments  default  type      definition
+#   ---------  -------  ----      ----------
+#   Ql           --    vector    lower bound on flood flows for each
+#                                  year in record
+#   Qu           --    vector    upper bound on flood flows for each
+#                                  year in record
+#                                  N.B.QL[i] = QU[i] indicates measured obs.
+#                                      QL[i] < QU[i] indicates
+#                                                   interval-censored obs.
+#                                      N.B. endpoints may be -inf, +inf
+#   QTl         1e-99  vector    threshold of left censoring for each year
+#   QTu         1e+99  vector    threshold of right censoring for each year
+#                                      QTl = -inf & QTu = + inf indicates
+#                                                   systematic data
+#   rs           -99   scalar    regional ("generalized") skew
+#   rmse        0.302  scalar    mse of rs, usually assumed to be 0.302 (B17B)
+#   quant       0.99   scalar    quantile to be estimated;
+#                                  quant==0.99 indicates "100-year flood"
+#   eps         0.95   scalar    nominal coverage of confidence interval
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#   returns list(moms=mc,qp=exp(cis$yp),ci=exp(lci))
+#
+#   arguments  default  type      definition
+#   ---------  -------  ----      ----------
+#   moms         --     vector    fitted central moments of LP3 distribution
+#   qp           --     scalar    estimated value of Qp (real units)
+#   ci           --     vector    estimated lower and upper confidence
+#                                   interval (real units)
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+ema<-function(o,quant=0.99,eps=0.90,skewmin=0.08,JustMoms=F){
+  rs<-o@RegionalSkew;rmse<-max(1e-10,o@RegionalSkewMSE);
+  if(rs==-99){rmse<-1.e20}
+  cmoms<-.p3mombin(o@logql,o@logqu);
+   asmse<-.mseg(length(o@logql),cmoms[3]);
+  mc<-.p3mombin(o@logql,o@logqu,asmse=asmse,rs=rs,rmse=rmse,
+                varmse=varmse,rvar=o@RegionalVar,rvarmse=o@RegionalVarMSE)
+  if(JustMoms) return(list(moms=mc,moms10=mc/c(log(10),log(10)^2,1)))
+#
+  if(quant<=0 || quant>=1) return(list(moms=mc,qp=NA,ci=NA,cvypsyp=NA))
+#
+    if(abs(mc[3])>=skewmin)
+      {cvypsyp<-.cvypsypfunc(quant,o@tl,o@tu,o@no,mc,rmse)}
+    else
+      {  w<-(skewmin-mc[3])/(2*skewmin);
+       cvypsyp<- w * .cvypsypfunc(quant,o@tl,o@tu,o@no,c(mc[1:2],-skewmin),rmse) +
+             (1-w) * .cvypsypfunc(quant,o@tl,o@tu,o@no,c(mc[1:2], skewmin),rmse)
+      }
+  lci<-.ci_ema_03(qP3(quant,mc),cvypsyp,eps);
+  list(moms=mc,
+       moms10=mc/c(log(10),log(10)^2,1),
+       qp=exp(qP3(quant,mc)),
+       ci=exp(lci),
+       cvypsyp=cvypsyp,
+       o=o)
+  }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  .p3mombin
+#
+#  Computes ema estimates given input vectors ql, qu.
+#    rw, rs are weight (0-1) to apply to regional skew and reg. skew
+#
+#   Tim Cohn........27 May 2004
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   ql           vector    lower bound on log-flood flow for each year
+#   qu           vector    upper bound on log-flood flow for each year
+#                            N.B. ql[i]==qu[i] indicates systematic obs.
+#                                 ql[i]==-inf indicates left-censored obs
+#   asmse        scalar    mse of at-site skew
+#   rs           scalar    regional ("generalized") skew
+#   rmse         scalar    mse of rs, usually assumed to be 0.302 (B17B)
+#   varmse       scalar    mse for at-site variance
+#   rvar         scalar    regional variance
+#   rvarmse      scalar    mse of regional variance
+#
+#   (result)     vector    updated moments
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+.p3mombin<-function(ql,qu,asmse=1e-10,rs=0.1,rmse=1e20,
+                    varmse=0,rvar=-99,rvarmse=1e10){
+        mo<-c(0,1,1);m<-c(0,2,.2);
+        while(((mo-m)%*%(mo-m))>1e-11){mo<-m;
+        m<- .emoms(ql,qu,m);
+        m<- .momsadj(ql,qu,m);
+        m<- .momsp3(m,asmse=asmse,rskew=rs,rmse=rmse)};
+        m}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  momsp3
+#
+#  adjusts for regional skew and regional standard deviation (uses variance)
+#
+#   Tim Cohn........27 May 2004
+#           ........19 Jan 2011 (added regional variance)
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   m            vector    computed moments
+#   asmse        scalar    mse for at-site skew
+#   rskew        scalar    regional skew
+#   rmse         scalar    mse of regional skew
+#   varmse       scalar    mse for at-site variance
+#   rvar         scalar    regional variance
+#   rvarmse      scalar    mse of regional variance
+#
+#   (result)     vector    updated moments
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+.momsp3<-function(m,asmse,rskew,rmse=1e20,varmse=0,rvar=-99,rvarmse=1e10)
+   {m[2]<-(varmse*rskew+rvarmse*m[2])/(varmse+rvarmse)
+    m[3]<-(asmse*rskew+rmse*m[3])/(asmse+rmse);
+    m}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  .momsadj
+#
+#  adjusts for regional skew (see [Griffis, Stedinger, Cohn, WRR 2004])
+#
+#   Tim Cohn........27 May 2004
+#           ........24 Sep 2010 added return if non-moments supplied (1st line)
+#
+.momsadj<-function(ql,qu,m){
+         if(any(is.na(m))){print('.momsadj');return(c(0,1,0.1))}
+         if(m[3]> -0.1){return(m)}
+         xmax<-max(ql);s1<-m[3];s2<- -1.41;p<-.m2p(m);
+         ifelse(p[1]>=xmax,
+             m[3]<-max(s1,s2),
+             {s3<-2/sqrt(m[2])/(m[1]-xmax);m[3]<-max(s1,s2,s3)});
+         m}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  .mseg
+#
+#  computes mse of at-site skew [see B17B]
+#
+#   Tim Cohn........27 May 2004
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   n            scalar    complete sample size (for skew, we use largest "n")
+#   g            scalar    sample skewness
+#
+#   (result)     scalar    MSE of sample skew
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+.mseg<-function(n,g){
+      ifelse(abs(g)<=0.9,a<- -0.33+0.08*abs(g),a<- -0.52+0.3*abs(g));
+      ifelse(abs(g)<=1.5,b<-0.94-0.26*abs(g),b<-0.55);
+      10^(a - b * log(n/10)/log(10) )}
+
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  .emoms
+#
+#  Computes expected moments given a vector {ql,qu} with B17B bias corrections
+#     N.B. See [Cohn et al., WRR 1977, 2001], or [Griffis et al., WRR 2004])
+#
+#   Tim Cohn........27 May 2004
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   ql           vector    lower bound on log-flood flow for each year
+#   qu           vector    upper bound on log-flood flow for each year
+#   m            vector    moments/parameters of P3 distribution {mu,.Sigma^2,g}
+#
+#   (result)     vector    central, bias-corrected, moments
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+.emoms<-function(ql,qu,m){ne<-sum(ql==qu);nc<-sum(ql!=qu);n<-ne+nc;
+      mx<-array(data=NA,dim=c(n,3));
+  mx<-mP3(ql,qu,m)
+          SX<-sum(mx[,1]); #SXX<-sum(mx[,2]);SXXX<-sum(mx[,3])
+        m1<- SX/n;
+  mx<-mP3(ql-m1,qu-m1,m-c(m1,0,0))
+          v2<- mx[,2]; v3<- mx[,3];
+        c2<-n/max(1,(n-1));c3<-n^2/max(1,(n-1)*(n-2));
+#        c2<-ne/max(1,(ne-1));c3<-ne^2/max(1,(ne-1)*(ne-2));
+#                  c2<-c3<-1; # N.B. This line removes bias correction
+        cmoms<-c(m1,(c2*(ql==qu)%*%v2 + (ql!=qu)%*%v2)/n,
+                    (c3*(ql==qu)%*%v3 + (ql!=qu)%*%v3)/n  );
+        c(cmoms[1],cmoms[2],cmoms[3]/cmoms[2]^1.5)}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Compute the Variance-Covariance matrix of the non-central moments
+#     N.B. Result should match VARMOM
+#
+#
+#   Tim Cohn........5 Jun 2004
+#
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+.JacM<-function(tl,tu,m){.expmomderiv(.m2p(m),tl,tu)}
+
+.JacQ2<-function(q,m){m1<-m[1];m2<-m[2];m3<-m[3];
+  attr(numericDeriv(quote(qP3(q,c(m1,m2,m3))),c("m1","m2","m3")),"gradient");
+}
+
+
+# note that mj limits value of
+.JacS2<-function(q,m,tl,tu,No,rmse,
+       diagSig2=c(1,2,6)/100,d=0.05){
+  mj<-c(m[1:2],max(-1.41,min(1.41,m[3])))
+  dg<-pmin(d*sqrt(mj[2])*sqrt(diagSig2),c(1e20,abs(mj[2:3]))/2)
+  array(data=c(
+  (sypf(q,.mmc(mj,1,dg[1]),tl,tu,No,rmse)-sypf(q,.mmc(mj,1,-dg[1]),tl,tu,No,rmse))/(2*dg[1]),
+  (sypf(q,.mmc(mj,2,dg[2]),tl,tu,No,rmse)-sypf(q,.mmc(mj,2,-dg[2]),tl,tu,No,rmse))/(2*dg[2]),
+  (sypf(q,.mmc(mj,3,dg[3]),tl,tu,No,rmse)-sypf(q,.mmc(mj,3,-dg[3]),tl,tu,No,rmse))/(2*dg[3])),dim=c(1,3)
+)}
+  .mmc<-function(m,i,d){mc<-m;mc[i]<-mc[i]+d;mc}
+
+  sypf<-function(q,m,tl,tu,No,rmse=1e20){
+      JQ2<-.JacQ2(q,m);
+      mj<-c(m[1:2],max(-1.45,min(1.45,m[3])))
+      Sig2<-Mn2mVarB(m,.SigReg(tl,tu,No,mj,rmse));
+      sqrt(JQ2%*%Sig2%*%t(JQ2))};
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Compute the Variance-Covariance matrix of Yp and Syp
+#     N.B. The covariance matrix corresponds to the quantile estimator, Yp,
+#          and the standard deviation of the quantile estimator, Syp
+#
+.cvypsypfunc<-function(q,tlin,tuin,No,mcin,rmse=1e20){
+  mc<-c(0,mcin[2:3]); tu<-tuin-mcin[1];tl<-tlin-mcin[1];
+  Sig2<-Mn2mVarB(mc,.SigReg(tl,tu,No,mc,rmse));
+  JQ2<-.JacQ2(q,mc);
+  JS2<-.JacS2(q,mc,tl,tu,No,rmse,diag(Sig2));
+  rbind(JQ2,JS2)%*%Sig2%*%t(rbind(JQ2,JS2))
+}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Compute the Variance-Covariance matrix of the non-central moments
+#     N.B. The result should match VARMOM
+#
+#
+#   Tim Cohn........5 Jun 2004
+#           .......30 Oct 2015 Eliminated NAs for abs(skew) > 2
+#                              Also added cubic spline for abs(skew)<0.05
+#
+#  N.B.  In most cases, numerical performance will be improved if p[1]<- -p[2]*p[3]
+#        Because estimators are invariant, this will not change result.
+#
+.Sigma<-function(tl,tu,No,m,G=c(-0.10,-0.05,0.05,0.1)){
+#
+  if(abs(m[3]) < min(abs(G))) {  # NB: Poly fit nr zero [see Press, cubic spline]
+    V = Reduce("+",lapply(1:length(G),function(i){
+       prod((m[3]-G[-i])/(G[i]-G[-i])) * .Sigma(tl,tu,No,m=c(m[1:2],G[i]),G=G)}))
+    return(V)
+ }
+  N<-sum(No);Nt<-length(No);
+  Z<-array(0,c(3,3));sVarB<-Z;sD<-Z;sVarC<-Z;Jl<-Z;Jg<-Z
+ for(i in 1:Nt){
+  Nh<-No[i];
+  MuNl<-Nh*(pl<-pP3(tl[i],m));
+  MuNb<-Nh*(pb<-pP3(tu[i],m)-pP3(tl[i],m));
+  MuNg<-Nh*(pg<-1-pP3(tu[i],m)); MuX<-Z;
+  MuX[,1]<-mP3(tl[i]-100,tl[i],m)
+  MuX[,2]<-mP3(tl[i],tu[i],m)
+  MuX[,3]<-mP3(tu[i],tu[i]+100,m)
+   if(MuNl>0) Jl<-.JacM(tl[i]-100,tl[i],m)
+   if(MuNg>0) Jg<-.JacM(tu[i],tu[i]+100,m);
+    D<-MuNl*Jl + MuNg*Jg
+VarN<-Nh*array(data=c(pl%*%(1-pl),-pl%*%pb,-pl%*%pg,
+                    -pb%*%pl,pb%*%(1-pb),-pb%*%pg,
+                    -pg%*%pl,-pg%*%pb,pg%*%(1-pg)),dim=c(3,3))
+ VarB<-MuX%*%VarN%*%t(MuX);
+ VarC<-array(NA,c(3,3));for(j in 1:3){for( k in 1:3){VarC[j,k]<-MuNb * (
+ expctP3(tl[i],tu[i],m,j+k)-expctP3(tl[i],tu[i],m,j)*expctP3(tl[i],tu[i],m,k) )}};
+ sD<-sD+D;sVarB<-sVarB+VarB;sVarC<-sVarC+VarC
+}
+  A<-ginv(array(c(1,0,0,0,1,0,0,0,1),c(3,3))-sD/N);
+  V<-(1/N^2)*A%*%(sVarB+sVarC)%*%t(A)
+  return(V)
+}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Computes Variance-Covariance with regional skew
+#
+#   Tim Cohn........17 Jun 2004
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+.SigReg<-function(tl,tu,No,m,rmse){.regskew(sum(No),m,.Sigma(tl,tu,No,m),rmse)}
+
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Computes Variance-Covariance with regional skew
+#
+#   Tim Cohn........17 Jun 2004
+#           ........28 Jun 2016 (changed m2mnvar to mc2mnvB)
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  w is weight on at-site skew
+#
+.regskew<-function(n,mc,Sig,rmse){
+      smc<-Mn2mVarB(mc,Sig);
+      mse_station <- .mseg(n,mc[3])
+      w <- rmse/(mse_station + rmse)
+        smc[3,1]  <- smc[1,3]  <- w * smc[1,3];
+        smc[3,2]  <- smc[2,3]  <- w * smc[2,3];
+        smc[3,3]  <- w^2 * smc[3,3] + (1-w)^2 * rmse;
+      mc2mnvB(mc,smc)
+      }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Compute Variance-Covariance of central moments
+#     from V-CV of noncentral moments
+#
+#   Tim Cohn........17 Jun 2004
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+.mn2mvar<-function(m,smn){
+      mn    <-  .m2mn(m)
+      m1    <-  mn[1]
+      m2    <-  mn[2]
+      m3    <-  mn[3]
+
+        df       <-array(NA,c(3,3))
+        df[1,1]  <-  1
+        df[1,2]  <-  0
+        df[1,3]  <-  0
+
+        df[2,1]  <-  -2*m1
+        df[2,2]  <-  1
+        df[2,3]  <-  0
+
+        df[3,1]  <-  (6*m1^2 - 3*m2)/(-m1^2 + m2)^1.5 +
+                   (3*m1*(2*m1^3 - 3*m1*m2 + m3))/
+                   (-m1^2 + m2)^2.5
+        df[3,2]  <-  (-3*m1)/(-m1^2 + m2)^1.5 -
+                   (3*(2*m1^3 - 3*m1*m2 + m3))/
+                   (2*(-m1^2 + m2)^2.5)
+        df[3,3]  <-  (-m1^2 + m2)^(-1.5);
+
+        df%*%smn%*%t(df)
+        }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Implements third confidence interval formula
+#  (the "adjusted" CI formula in Cohn, Lane and Stedinger [WRR, 2001])
+#
+#   Tim Cohn........17 Dec 2004
+#           ........12 Nov 2005
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+.ci_ema_03<-function(yp1,cvypsyp,eps=0.95){
+  b1 <- cvypsyp[1,2]/cvypsyp[1,1]
+  syp1 <- sqrt(cvypsyp[1,1])
+  vxd <- cvypsyp[2,2] - cvypsyp[1,2]^2/cvypsyp[1,1]
+  nu <- 0.5 * max(1,cvypsyp[1,1]/vxd)
+  th<-qtn((1+eps)/2,nu); tl<-qtn((1-eps)/2,nu);
+  yp1 + syp1*c(tl/max(0.5,1-b1*tl),th/max(0.5,1-b1*th))
+  }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Utility to count duplicate censoring threshold combinations
+#
+#   Tim Cohn........25 Oct 2005
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   tl           vector    lower bound on interval for which a flood would
+#                            be observed in each year
+#   tu           vector    upper bound on interval for which a flood would
+#                            be observed in each year
+#   rn, rl, ru   vector    number of cases where tl=rl and tu=ru
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+.countlevel<-function(tl,tu){
+  l<-tl;u<-tu;rl<-ru<-rn<-numeric()
+  i<-1;while(length(l)>0){
+     rl[i]<-l[1];ru[i]<-u[1];
+     t<-l==rl[i]&u==ru[i];rn[i]<-sum(t)
+     l<-subset(l,!t);u<-subset(u,!t)
+     i<-i+1}
+     list(rl=rl,ru=ru,rn=rn)
+     }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Derviatives with respect to non-central moments of expected moments
+#
+#   Tim Cohn........25 Oct 2005
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   p            vector    P3 parameters(tau,alpha,beta)
+#   tl           vector    lower bound on interval for which a flood would
+#                            be observed in each year
+#   tu           vector    upper bound on interval for which a flood would
+#                            be observed in each year
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+.expmomderiv<-function(p,tl_in,tu_in){mc<-.p2m(p);
+  tu<-max(min(tu_in,qP3(0.999999999,mc)),qP3(0.0000000002,mc));
+  tl<-min(max(tl_in,qP3(0.0000000001,mc)),tu_in);
+.dexpect(p,tl,tu)%*%.dpdm(p)}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Derviative with respect to parameters of expected moments
+#
+#   Tim Cohn........25 Oct 2005
+#           ........16 Dec 2010 (fixed return when p[3]==0
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   p            vector    P3 parameters(tau,alpha,beta)
+#   tl           vector    lower bound on interval for which a flood would
+#                            be observed in each year
+#   tu           vector    upper bound on interval for which a flood would
+#                            be observed in each year
+#
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+.dexpect<-function(p,tl,tu)
+{	    dg1<-b<-db<-g1<-m1<-m2<-m3<-fu<-fl<-numeric()
+        dm1<-dm2<-dm3<-array(NA,dim=c(3,3))
+
+  if(p[3] == 0){return(array(0,dim=c(3,3)))}
+	if(p[3]>0)
+       {stdl <- max(0,(tl-p[1])/p[3]);stdu<-(tu-p[1])/p[3]}
+	else
+      {stdl <- max(0,(tu-p[1])/p[3]);stdu<-(tl-p[1])/p[3]}
+
+	  lstdl <- log(max(1e-99,stdl))
+	  lstdu <- log(max(1e-99,stdu))
+
+	  dstdlt <-  -1/p[3]
+	  dstdut <-  -1/p[3]
+	  dstdlb <-  -stdl/p[3]
+	  dstdub <-  -stdu/p[3]
+
+	  adj <- c(p[2],(p[2]+1)*p[2],(p[2]+2)*(p[2]+1)*p[2])
+	  dadj<- c(1,adj[1]+(p[2]+1),adj[2]+(p[2]+2)*(adj[1]+(p[2]+1)))
+# fp_g1_cdf(x,a) is equivalent to pgamma(x,a)
+ 	    g10  <- pgamma(stdu,p[2])-pgamma(stdl,p[2])
+        dg10 <- .ddgam(p[2],stdu) - .ddgam(p[2],stdl)
+	    fu0  <- dgamma(stdu,p[2])
+	    fl0  <- dgamma(stdl,p[2])
+     for(j in 1:3)
+  {
+        g1[j] <- pgamma(stdu,p[2]+j)-pgamma(stdl,p[2]+j)
+        dg1[j]<-  .ddgam(p[2]+j,stdu) - .ddgam(p[2]+j,stdl)
+	    b[j]  <-  g1[j]/g10
+	    db[j] <-  (dg1[j]*g10 - dg10*g1[j])/g10^2
+    #    fp_g1_cdf(x,a) is equivalent to dgamma(x,a)
+	fu[j]   <-  dgamma(stdu,p[2]+j)
+	fl[j]   <-  dgamma(stdl,p[2]+j)
+        dm1[j,1]<- (
+           (fu[j]*dstdut - fl[j]*dstdlt) * g10 -
+           (fu0*dstdut - fl0*dstdlt) * g1[j] )/g10^2
+        dm1[j,3] <- (
+           (fu[j]*dstdub - fl[j]*dstdlb) * g10 -
+           (fu0*dstdub - fl0*dstdlb) * g1[j] )/g10^2
+  }
+      for(j in 1:3)
+  {
+    m1[j]         <-  adj[j]*b[j]
+    dm1[j,2]      <-  adj[j]*db[j] + dadj[j]*b[j]
+	dm1[j,1]      <-  adj[j]*dm1[j,1]
+	dm1[j,3]      <-  adj[j]*dm1[j,3]
+  }
+      for(j in 1:3)
+  {
+        m2[j]    <- p[3]^j * m1[j]
+	dm2[j,1]  <- p[3]^j * dm1[j,1]
+	dm2[j,2]  <- p[3]^j * dm1[j,2]
+	dm2[j,3]  <- j * p[3]^(j-1) * m1[j] + p[3]^j * dm1[j,3]
+  }
+      for(j in 1:3)
+  {
+          m3[j]     <- m2[j] + p[1]^j
+	  dm3[j,1]  <- j * p[1]^(j-1) + dm2[j,1]
+	  dm3[j,2]  <- dm2[j,2]
+	  dm3[j,3]  <- dm2[j,3]
+	  if(j>1){ for(k in 1:(j-1))
+	{
+	  ch        <-  choose(j,k)
+	  m3[j]     <-  m3[j] + ch*p[1]^(j-k) * m2[k]
+	  dm3[j,1]  <-  dm3[j,1] + ch*(
+                        (j-k)*p[1]^(j-k-1) * m2[k] +
+                        p[1]^(j-k) * dm2[k,1] )
+	  dm3[j,2]  <-  dm3[j,2] + ch*p[1]^(j-k) * dm2[k,2]
+	  dm3[j,3]  <-  dm3[j,3] + ch*p[1]^(j-k) * dm2[k,3]
+    }
+    }
+  }
+      dm3}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Derivative of incomplete gamma function
+#
+#   Tim Cohn........12 Nov 2005
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   alpha        scalar    Gamma shape parameter
+#   x            scalar    x value
+#
+#  N.B:  Numerical derivative provides only about 7 digits of precision
+#        This is not sufficient for the multiple layers of derivatives
+#     .ddgam<-function(alpha,x){a<-alpha;attr(numericDeriv(quote((pgamma(x,a))),"a"),"gradient")}
+#
+.ddgam<-function(alpha,x,tol=1e-11)
+{
+       if(alpha< 0 | x<= 0 | abs(x-alpha)/sqrt(alpha+1)>7){return(0)}
+
+      a        <- alpha
+	  logx     <-  log(x)
+  if(x < 5){
+          t        <-  x**a
+	  r        <-  (a*logx-1)/a**2
+	  sum      <-  t*r
+	for(i in 1:1000){
+	  ai       <-  a+i
+	  t        <-  -t*x/i
+	  r        <-  (ai*logx-1)/ai**2
+	  del      <-  r*t
+	  sum      <-  sum + del
+	   if(i>1 && abs(del)<(1+abs(sum))*tol){
+	     return(sum/exp(lgamma(a)) - psigamma(a)*pgamma(x,a))}
+     }
+   }
+   else
+   {
+      if(x > a+30){
+          t        <-  exp(-x + (a-1)*logx - lgamma(a) )
+	      r        <-  logx - psigamma(a)
+	      sum      <-  r*t
+	    for(i in 1:(a-1)){
+	      ami <-  a-i
+	      t   <-  t*(ami)/x
+	      r   <-  logx - psigamma(ami)
+	      del <-  r*t
+	      sum <-  sum + del
+	      if(i > 1 & abs(del) < (1+abs(sum))*tol){return(-sum)}
+        }
+      }
+      else {
+          t        <-  exp(-x + a*logx - lgamma(a+1) )
+	      r        <-  logx - psigamma(a+1)
+	      sum      <-  r*t
+	    for(i in 1:10000){
+	      t        <-  t*x/(a+i)
+	      r        <-  logx - psigamma(a+i+1)
+	      del      <-  r*t
+	      sum      <-  sum + del
+	      if(i>1 && abs(del)<(1+abs(sum))*tol){return(sum)}
+        }
+      }
+    }
+    return(0)}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Jacobian of transformation from parameters to non-central moments
+#
+#   Tim Cohn........25 Oct 2005
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   p            vector    P3 parameters(tau,alpha,beta)
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+.dpdm<-function(p)
+{ mn<-.p2mn(p)
+  v <- mn[2] - mn[1]^2
+  dvdm <- c(-2*mn[1],1,0)
+  s <- mn[3] - 3*mn[2]*mn[1] + 2*mn[1]^3
+  dsdm <- c(-3*mn[2] + 6*mn[1]^2,-3*mn[1],1)
+  a <- 4*(v^3)/s^2
+  dadm <- 4*(3*v^2*s^2*dvdm - 2*s*v^3*dsdm)/s^4
+  d <- v/a
+  dddm <- (dvdm*a-dadm*v)/a^2
+  b <- sign(s)*sqrt(d)
+  dbdm <- 0.5*dddm/b
+  t <- mn[1] - a*b
+  dtdm <-  c(1,0,0) - (dadm*b + a*dbdm)
+  t(array(data=c(dtdm,dadm,dbdm),dim=c(3,3)))
+}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Student's t distribution quantile function (from F)
+#
+#   Tim Cohn........25 Oct 2005
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   p            vector    non-exceedance probability
+#   df           scalar    degrees of freedom (not necessarily integral)
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+ qtn<-function(p,df){sign(p-0.5)*sqrt(qf(2*abs(p-0.5),1,df))}
+
+
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  P3 Probability Density Function
+#
+dP3<-function(x,m){fspline(x=m[3],f=function(g){.dP3a(x,c(m[1:2],g))},
+                                  X=c(-0.02,-0.01,0.01,0.02))}
+ .dP3a<-function(x,m){p<-.m2p(m);dgamma((x-p[1])/sign(p[3]),shape=p[2],scale=abs(p[3]))}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  P3 Cumulative Distribution Function
+#
+pP3<-function(x,m){fspline(x=m[3],f=function(g){.pP3a(x,c(m[1:2],g))},
+                                  X=c(-0.02,-0.01,0.01,0.02))}
+ .pP3a<-function(x,m){p<-.m2p(m);pr<-pgamma((x-p[1])/p[3],shape=p[2]);
+   tmp<-1-pr;if(m[3]>0)tmp<-pr;tmp}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  P3 Quantile Function
+#
+qP3<-function(qp,m){fspline(x=m[3],f=function(g){.qP3a(qp,c(m[1:2],g))},
+                                   X=c(-0.02,-0.01,0.01,0.02))}
+ .qP3a<-function(qp,m){p<-.m2p(m);p[1]+p[3]*qgamma(
+ {tmp<-1-qp;if(m[3]>0)tmp<-qp;tmp},shape=p[2])}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  P3 Random Variates
+#
+rP3<-function(n,m){qP3(runif(n),m)}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Wilson-Hilferty transformation to P3 and to Gaussian
+#
+.WHlp2z<-function(x,g){if(g==0){return(x)};(6/g)*(g^2/36-1+pmax(0,1+g*x/2)^(1/3))}
+.WHz2lp<-function(z,g){if(g==0){return(z)};(2/g)*(1+g*z/6-g^2/36)^3-2/g}
+.WHpP3<-function(x,g){pnorm(.WHlp2z(x,g))}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Wilson-Hilferty expansion of standardized P3 in terms of cubic polynomial in Z
+#   Note:  Coefficients are exact for WH approximation
+#
+#   If Y~P3 with m=c(0,1,g), then E[Y] = .WHc' * {1, E[Z], E[Z^2], E[Z^3]}
+.WHc<-function(g){
+  c(-g*(3888-108*g^2+g^4)/23328, (1-g^2/36)^2, (g/6)*(1-g^2/36), g^2/108)}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Moments of a censored standard normal variate E[Z|a<Z<b]
+#   -- returns first k moments, where k must exceed 3
+#
+.expctZ<-function(a,b,k){m<-array(NA,dim=c(length(a),k));
+ {h<-function(i){
+   ifelse(a>=b,
+     ifelse(rep(i==0,length(a)),a,a^(i+1)-i*a^(i-1)),
+       ((a^i)*dnorm(a)-(b^i)*dnorm(b))/pmax(1.e-25,(pnorm(b)-pnorm(a))))};
+ m[,1]<-h(0);m[,2]<-1+h(1);for(j in 3:k){m[,j]<-(j-1)*m[,j-2]+h(j-1)}};
+ m}
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  First 3 Moments of censored P3 variate E[X^k|lbg<X<ubg]
+#
+mP3<-function(lbg,ubg,m,nmoms=3){fspline(x=m[3],X=c(-0.02,-0.01,0.01,0.02),function(g){
+          .mP3a(lbg,ubg,c(m[1:2],g),nmoms=nmoms)})}
+  .mP3a<-function(lbg,ubg,m,nmoms=3){
+    p<-.m2p(m);
+    rbind((sapply(1:nmoms,function(i).expctg3(lbg,ubg,p,i))))}  # Gamma for |g|>0.05
+  .mP3b<-function(lbg,ubg,m,nmoms=3){                           # WH for |g|<0.10
+    s<-sqrt(m[2]);
+    mP1<-..expctP1((lbg-m[1])/s,(ubg-m[1])/s,m[3],nmoms);
+    rbind(sapply(1:nmoms,function(i)sum(sapply(0:i,function(j)choose(i,j)*
+            m[1]^(i-j)*s^i*mP1[,i])))
+      )}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Any (k-th) moment of censored P3 variate E[X^k|lbg<X<ubg]
+#
+expctP3<-function(lbg,ubg,m,k=1){funsplice(abs(m[3]),0.005,0.010,.expctP3b,.expctP3a,lbg,ubg,m,k)}
+  .expctP3a<-function(lbg,ubg,m,k){.expctg3(lbg,ubg,.m2p(m),k)}  # Gamma for |g|>0.05
+  .expctP3b<-function(lbg,ubg,m,k){                            # WH for |g|<0.10
+    s<-sqrt(m[2]);
+    mP1<-..expctP1((lbg-m[1])/s,(ubg-m[1])/s,m[3],k);
+    s1<-m[1]^k;for(i in 1:k){s1<-s1+choose(k,i)*m[1]^(k-i)*(s^i*mP1[i])}
+    s1}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+# Moments of WH (standardized Gamma) computed in terms of moments of censored normal
+#  Note that R employs 1-based array indexing; all the indices are shifted
+#
+..expctP1<-function(lbg,ubg,g,k){
+     mm<-array(NA,c(length(lbg),k));
+     MZ<-array(NA,c(length(lbg),3*k+1));
+   INT <- !(lbg==ubg)
+ for(j in 1:k){mm[!INT,j] <- lbg[!INT]^j}
+   if(!all(lbg==ubg))
+   {
+     lb<-.WHlp2z(lbg,g);ub<-.WHlp2z(ubg,g);
+      b<-array(NA,c(k,3*k+1));a<-.WHc(g);
+    for(j in 1:k){
+      if(j==1) b[1,1:4]<-a else for(n in 1:(3*j+1)){
+            b[j,n]<-
+            b[j-1,min(3*(j-1)+1,n):max(1,n-3)] %*%
+            a[max(1,n-3*(j-1)):min(4,n)]
+           }
+        MZ[INT,]<-cbind(1,.expctZ(lb[INT],ub[INT],3*k));
+        mm[INT,j]<-MZ[INT,1:(3*j+1)] %*% b[j,1:(3*j+1)]
+    }
+   }
+    mm
+}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Skew and p3 fit for uncensored datasets (trivial test cases)
+#
+skew<-function(x,na.rm=F){
+    if(na.rm) x<-subset(x,!is.na(x))
+    n<-length(x)
+    m<-mean(x)
+    mean((x-m)^3)/(var(x)^1.5)*n^2/((n-1)*(n-2))}
+
+p3fit <- function(x,RegionalSkew=0.1,RegionalSkewMSE=1e20){
+  m       <-c(mean(x),var(x),skew(x))
+  if(RegionalSkewMSE<1e20){
+    asmse   <- .mseg(length(x),m[3])
+    m[3]    <- (asmse*RegionalSkew + RegionalSkewMSE*m[3])/(asmse+RegionalSkewMSE)
+  }
+  return(m)
+  }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  .expctg1
+#
+#  Expected value of X^k given that X is
+#   1-p gamma variate and xl<X<xu
+#
+#   Tim Cohn........27 May 2004
+#
+#  Notes:
+#    1)  Uses xu^k if (xl,xu) is not on the support given a
+#
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   xl           vector    complete sample size (for skew, we use largest "n")
+#   xu           vector    sample skewness
+#   a            scalar    shape parameter for 1-p gamma
+#   b            scalar    scale parameter for 2-p gamma
+#   t            scalar    location parameter for 3-p gamma
+#   k            scalar    moment to be computed
+#
+#   (result)     vector    E[X^^k|xu<=X<xl,{t,a,b}]
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+.expctg1<-function(xl,xu,a,k){l<-pmax(0,xl);u<-pmax(0,xu);
+        ifelse(l==u,xu^k,{d<-(pgamma(u,a)-pgamma(l,a));
+        ifelse(d==0,xl^k,((pgamma(u,a+k)-pgamma(l,a+k))/d)*
+        gamma(k)/beta(a,k))})};
+.expctg2<-function(xl,xu,a,b,k){b^k*.expctg1(xl/b,xu/b,a,k)}
+.expctg3<-function(xl,xu,p,k){t<-p[1];s<-t^k+.expctg2(xl-t,xu-t,p[2],p[3],k);
+        if(k>1){for(i in 1:(k-1))
+          {s<-s+choose(k,i)*t^i*.expctg2(xl-t,xu-t,p[2],p[3],k-i)} };
+        s}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  funsplice
+#
+#  C2 splice for two functions over an interal (x1,x2)
+#
+#   Tim Cohn........6 Aug 2004
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   x            scalar    splice variable
+#   x1           vector    beginning of splice
+#   x2           vector    end of splice
+#   fun1         function  left-hand function
+#   fun2         function  right-hand function
+#   ...          ??        arguments passed to fun1 and fun2
+#   result       value     w1*fun1(...) + (1-w1)*fun2(...)
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+funsplice<-function(x,x1,x2,fun1,fun2,...){
+     if(x<=x1){return(fun1(...))}
+     if(x>=x2){return(fun2(...))}
+     w1<-(1+cos(pi*pmin(1,pmax(0,(x-x1)/(x2-x1)))))/2;
+     w1*fun1(...)+(1-w1)*fun2(...)
+     }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  fspline
+#
+#  Fit an interpolating polynomial to k points
+#  Note that for n=4, this is a natural cubic spline fit
+#
+#   Tim Cohn........21 Oct 2015
+#           ........12 Nov 2015
+#
+#   arguments    type      definition
+#   ---------    ----      ----------
+#   x            scalar    value of x for which f(x) to be computed
+#   f            function  function to be evaluated
+#   X(n)         vector    nodes at which f can be evaluated accurately
+#   Extrap       logical   Extrapolate spline? Default = FALSE => use f(x)
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+fspline<-function(x,f,X,Extrap=FALSE){
+  if(Extrap | (x>min(X) & (x<max(X)))){
+    Reduce("+",lapply(1:length(X),function(i){
+        prod((x-X[-i])/(X[i]-X[-i])) * f(X[i])}))
+  }
+  else f(x)
+  }
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  .m2p, .p2m, etc.
+#
+#  utility functions; convert P3 parameters to P3 moments and
+#  P3 non-central moments
+#
+#   Tim Cohn........27 May 2004
+#
+#     N.B: "p" indicates parameters (tau,alpha,beta)
+#          "m" indicates central moments (mu=E[X],.Sigma^2,gamma)
+#          "mn" indicates non-central moments (mu,E[X^2],E[X^3])
+#
+.p2m<-function(p){c(p[1]+p[2]*p[3],p[2]*p[3]^2,2*sign(p[3])/sqrt(p[2]))}
+.m2p<-function(m){a<-4/max(1e-8,m[3]^2);b<-sqrt(m[2]/a)*ifelse(m[3]<0,-1,1);
+                   t<-m[1]-a*b;c(t,a,b)}
+.mn2m<-function(mn){m2<-mn[2]-mn[1]^2;
+                   c(mn[1],m2,(mn[3]-3*mn[2]*mn[1]+2*mn[1]^3)/m2^1.5)}
+.m2mn<-function(m){mn2<-m[2]+m[1]^2;
+                   c(m[1],mn2,m[3]*m[2]^1.5 + 3*mn2*m[1] - 2 * m[1]^3)}
+.p2mn<-function(p){.m2mn(.p2m(p))}
+.mn2p<-function(mn){.m2p(.mn2m(mn))}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Routine to calculate variance/covariance of central moments based on the
+#  variance/covariance of the non-central moments. The latter are easy to
+#  compute.
+#
+#  N.B. Algorithm is invention of TAC, possibly applicable to a very
+#       very broad class of statistical problems [!!]
+#
+#       Idea: Central moments are approximately multi-variate normal
+#             NC moments are incredibly non-normal
+#             Algorithm: Use 2-point quadrature scheme in 3-dim CM space to
+#             estimate NC moments (the inverse problem); compute error
+#             and Jacobian; update CM moments; iterate to convergence.
+#             Result is CMs with variance/covariance close to true CM
+#             moments found with, say, Monte Carlo methods.
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+
+Mn2mVarB<-function(mc,Smn,Nnd=c(3,3,3),G=c(-0.10,-0.05,0.05,0.1)){
+  if(abs(mc[3]) < min(abs(G))) {  # NB: Poly fit nr zero [see Press, cubic spline]
+    Smc = Reduce("+",lapply(1:length(G),function(i){
+       prod((mc[3]-G[-i])/(G[i]-G[-i])) * Mn2mVarB(c(mc[1:2],G[i]),Smn=Smn,Nnd=Nnd,G=G)}))
+    return(Smc)
+ }
+  Smc  <- .mn2mvar(mc,Smn)  # initialize
+  for(iter in 1:100){  # make up to 100 loops
+    x    <- Smc[c(1:3,5,6,9)] # pull 6 unique obs from symmetric 3x3 matrix
+    Smn2 <- mc2mnvB(mc,Smc,Nnd=Nnd)   # compute non-central moms corr. mc/Smc
+    J    <- Jmc2mnvB(mc,Smc)   # Jacobian of transformation
+    d    <- ginv(J) %*% ((Smn-Smn2)[c(1:3,5,6,9)]) # solve 6 linearized eqns
+    for(i in 1:100){  # make sure updated Smc invertible;
+      x2   <- x + d
+      Smc2 <- array(x2[c(1:3,2,4:5,3,5,6)],dim=c(3,3))
+      if(det(Smc2)>0 & all(diag(Smc2)>0)) break
+      d    <- d/2  # not invertible; take smaller step; try again
+    }
+  Smc   <- Smc2
+  if( t(d)%*%d < 1e-6) break  # check for convergence
+  }
+  return(Smc)  # done
+}
+
+mc2mnvB<-function(mc,Smc,Nnd=c(2,2,3)){
+  nd1<-gauss.quad.prob(n=Nnd[1],dist="normal")
+    alpha=mc[2]^2/Smc[2,2]
+    beta=1/sqrt(alpha)
+  nd2<-gauss.quad.prob(n=Nnd[2],dist="gamma",alpha=alpha,beta=beta)
+    nd2$nodes<-nd2$nodes-alpha*beta
+  nd3<-gauss.quad.prob(n=Nnd[3],dist="normal")
+  P<-chol33(Smc)
+  gr1<-expand.grid(unlist(nd1$nodes),unlist(nd2$nodes),unlist(nd3$nodes))
+  X<-apply(gr1,M=1,function(z) mc + z%*%P)
+  Xnc<-apply(X,M=2,.m2mn)
+  gr2<-expand.grid(unlist(nd1$weights),unlist(nd2$weights),unlist(nd3$weights))
+  W<-apply(gr2,M=1,prod)
+  varw(t(Xnc),W)
+}
+
+Jmc2mnvB<-function(mc,Smc,nd=c(-1,1)){
+  p<-Smc[c(1:3,5,6,9)]
+  J<-jacobian(function(x,mc){
+    Smc<-array(c(x[c(1:3,2,4,5,3,5,6)]),dim=c(3,3))
+    mc2mnvB(mc,Smc)[c(1:3,5,6,9)]},x=p,mc=mc)
+    J
+    }
+
+# quantile variance
+QpVar<-function(p,mc,Smc){
+  J<-t(jacobian(function(x,p)qP3(p,x),x=mc,p=p))
+  t(J)%*%Smc%*%J}
+
+QpVar2<-function(p,mc,Smc,Nnd=c(2,2,3)){
+  nd1<-gauss.quad.lp3(n=Nnd[1],moms=c(0,1,0))
+  nd2<-gauss.quad.lp3(n=Nnd[2],moms=c(0,1,2*sqrt(Smc[2,2])/mc[2]) )
+  nd3<-gauss.quad.lp3(n=Nnd[3],moms=c(0,1,GgPredict(Mg=mc[3],Vg=Smc[3,3])) )
+  P<-chol33(Smc)
+  gr1<-expand.grid(unlist(nd1$nodes),unlist(nd2$nodes),unlist(nd3$nodes))
+  X<-apply(gr1,M=1,function(z) mc + z%*%P)
+  gr2<-expand.grid(unlist(nd1$weights),unlist(nd2$weights),unlist(nd3$weights))
+  W<-apply(gr2,M=1,prod)
+  qp<-apply(X,M=2,function(mc)qP3(p,mc))
+  covw(x=qp,w=W)
+}
+
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#
+#  Special Case of 3x3 matrix, order of c(2,1,3)
+#
+chol33<-function(S){
+  V<-array(0,dim=c(3,3))
+  V[2,2]=sqrt(S[2,2])
+  V[2,1]=S[2,1]/V[2,2]
+  V[2,3]=S[2,3]/V[2,2]
+  V[1,1]=sqrt(S[1,1]-V[2,1]^2)
+  V[1,3]=(S[3,1]-V[2,3]*V[2,1])/V[1,1]
+  V[3,3]=sqrt(S[3,3]-V[2,3]^2-V[1,3]^2)
+  V}
+#
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#       Computation of a weighted mean and variance
+#
+#  N.B. These are MLEs, with N and not (N-1) in the denominator
+#       Also, weights can be done either way, but they are scaled
+#       to add to unity
+
+meanw<-function(x,w=rep(1,length(x))) {t(w/mean(w)) %*% x/length(x)}
+
+covw<-function(x,y=x,w=rep(1,length(x))) {
+   mx=meanw(x,w)
+   my=meanw(y,w)
+ sum(w * (x-mx) * (y-my))/sum(w)
+}
+
+varw<-function(X,W){
+  V<-array(NA,dim=c(3,3))
+  for(i in 1:3) for(j in i:3) V[j,i]<-V[i,j]<-covw(x=X[,i],y=X[,j],w=W)
+  V}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+# Big Sandy Test Dataset
+#
+#   Tim Cohn........30 June 2016
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+wy=1897:1973
+
+ql=c( 25000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 21000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 18500.0, 0.0, 0.0, 9100.0, 2060.0, 7820.0, 3220.0, 5580.0, 17000.0, 6740.0, 13080.0, 4270.0, 5940.0, 1680.0, 1200.0, 10100.0, 3780.0, 5340.0, 5630.0, 12000.0, 3980.0, 6130.0, 4740.0, 9880.0, 5230.0, 4260.0, 5000.0, 3320.0, 5480.0, 11800.0, 5150.0, 3350.0, 2400.0, 1460.0, 3770.0, 7480.0, 2740.0, 3100.0, 7180.0, 1920.0, 9060.0, 3080.0, 2700.0, 4330.0, 5080.0, 12000.0, 7640.0)
+
+qu=c( 25000.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 21000.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 18500.0, 9100.0, 2060.0, 7820.0, 3220.0, 5580.0, 17000.0, 6740.0, 13080.0, 4270.0, 5940.0, 1680.0, 1200.0, 10100.0, 3780.0, 5340.0, 5630.0, 12000.0, 3980.0, 6130.0, 4740.0, 9880.0, 5230.0, 4260.0, 5000.0, 3320.0, 5480.0, 11800.0, 5150.0, 3350.0, 2400.0, 1460.0, 3770.0, 7480.0, 2740.0, 3100.0, 7180.0, 1920.0, 9060.0, 3080.0, 2700.0, 4330.0, 5080.0, 12000.0, 7640.0)
+#
+r01 <- makeFLOODdata(ql=ql,qu=qu,year=wy,
+                    RegionalSkew=-0.5,RegionalSkewMSE=0.55^2)
+r02 <- makeEMAresult(r01)
+print(r02)

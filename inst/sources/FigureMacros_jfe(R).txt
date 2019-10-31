@@ -1,0 +1,616 @@
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Collection of macros to create slides for paper on low outliers
+#
+#   Tim Cohn........16 Sep 2010
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+# jfe modifications
+# 27-May-2013
+# reproduce figures for MGB manuscript and make some minor edits
+#
+# on Opteron
+# 28-May-2013
+# try different src file to see if EMA works
+# use pwd
+# setwd("~/Sites/LowOutliers")
+#
+# source("~/Sites/LowOutliers/res40.r")
+# source(file="~/Sites/LowOutliers/P3_071.r")
+# source(file="P3_071.r")
+# the P3_071.r routine is outdated. It fails on EMA - error is:
+#  'Error in ema(o, quant = pq[i], JustMoms = F) : object 'moms' not found'
+#
+# Fix - use P3_075.r
+source(file="P3_075.r")
+#
+# Modify Tim's LowOutliers to use pwd rather than Tim's workspaces
+source(file="LowOutliers_jfe.r")
+#
+#
+#  Orestimba Creek, 1932-1973
+#
+Year<-c(1932,1933,1934,1935,1936,1937,1938,1939,1940,1941,1942,1943,1944,
+1945,1946,1947,1948,1949,1950,1951,1952,1953,1954,1955,1956,1957,1958,
+1959,1960,1961,1962,1963,1964,1965,1966, 1967,1968,1969,1970,1971,1972,1973)
+
+Q<-c(4260.0,345.0,516.0,1320.0,1200.0,2180.0,3230.0,115.0,3440.0,3070.0,1880.0,
+      6450.0,1290.0,5970.0,782.0,0.0,0.0,335.0,175.0,2920.0,3660.0,147.0,0.0,
+       16.0,5620.0,1440.0,10200.0, 5380.0,448.0,0.0,1740.0,8300.0,156.0,560.0,128.0,4200.0,0.0,5080.0,
+       1010.0,584.0,0.0,1510.0)
+
+#
+#  Really the first slide (Figure 1)
+#
+#\caption{Annual-peak flow time series for Orestimba Creek, California,
+#         (11274500), with data from 1932-1973.
+# Zero flows are identified by triangles indicating they are less than 10 cfs.}
+#  \label{figure4-Orestimbatimeser}
+#  \centering
+#  \includegraphics[width=0.8\textwidth]{figure4-Orestimbatimeser.pdf}
+#
+
+pdf(file='fig1c.pdf',height=8,width=8)
+ plot(Year,pmax(Q,min(subset(Q,Q>0))),
+   main=c("Orestimba Creek (11274500)","Annual Peak Flow Data, 1932-1973"),
+   log='y',
+   xlab="Water Year",
+   ylab="Discharge (cfs)",
+   col=ifelse(Q==0,'red','black'),
+   pch=ifelse(Q==0,6,1))
+dev.off()
+# jfe elimiate header and adjust axes and scales and filename
+pdf(file='figure4-Orestimbatimeser.pdf',height=8,width=8)
+ plot(Year,pmax(Q,min(subset(Q,Q>0))),
+   log='y',
+   xlab="Water Year",
+   ylab="Annual Peak Discharge (cfs)",
+   col=ifelse(Q==0,'red','black'),
+   pch=ifelse(Q==0,6,1),
+   cex.axis=0.9)
+dev.off()
+#
+#  second slide
+#
+  qmin = 1
+  qu   = pmax(qmin,Q)
+  ql   = ifelse(qu==Q,Q,0.1)
+dset4a<-makeFLOODdata(ql=ql,qu=qu)
+# fails on this command. Need to debug.
+# error is:
+#     Error in ema(o, quant = pq[i], JustMoms = F) : object 'moms' not found
+# Fixed with Tim's routine P3_075.r from Oct 2012
+#
+dset4rTa<-makeEMAresult(dset4a,GB=T)
+plot(dset4rTa,title=c("Orestimba Creek Frequency Analysis",paste("T=",qmin)),parG=0,ylim=c(1,200000),PlotCI=F)
+  qmin = 10
+  qu   = pmax(qmin,Q)
+  ql   = ifelse(qu==Q,Q,0.1)
+dset4b<-makeFLOODdata(ql=ql,qu=qu)
+dset4rTb<-makeEMAresult(dset4b,GB=T)
+plot(dset4rTb,title=c("Orestimba Creek Frequency Analysis",paste("T=",qmin)),parG=0,ylim=c(1,200000),PlotCI=F)
+  qmin = 100
+  qu   = pmax(qmin,Q)
+  ql   = ifelse(qu==Q,Q,0.1)
+dset4c<-makeFLOODdata(ql=ql,qu=qu)
+dset4rTc<-makeEMAresult(dset4c,GB=T)
+plot(dset4rTc,title=c("Orestimba Creek Frequency Analysis",paste("T=",qmin)),parG=0,ylim=c(1,200000),PlotCI=F)
+  qmin = 1000
+  qu   = pmax(qmin,Q)
+  ql   = ifelse(qu==Q,Q,0.1)
+dset4d<-makeFLOODdata(ql=ql,qu=qu)
+dset4rTd<-makeEMAresult(dset4d,GB=T)
+plot(dset4rTd,title=c("Orestimba Creek Frequency Analysis",paste("T=",qmin)),parG=0,ylim=c(1,200000),PlotCI=F)
+
+
+#
+#  New First Frequency Curve slide (Figure 2)
+#
+#  \caption{LP-III distribution fit using Expected Moments Algorithm (EMA)  to
+# annual peak flow data from Orestimba Creek, California, (07377150), where all # values less than $1$[cfs] have been recoded as "less-than 1.0 [cfs]"}
+#  \label{fig:2}
+#  \centering
+#    \includegraphics[width=0.8\textwidth]{fig1d.pdf}
+#
+pdf(file='fig1d.pdf',height=8,width=8)
+   plot(dset4rTa,title=c("Orestimba Creek (07377150) Frequency Analysis","T=1"),parG=0,ylim=c(1,200000),PlotCI=F)
+dev.off()
+
+#
+#  4-way slide (Figure 5)
+#
+#  \caption{LP3 distribution fit using the Expected Moments Algorithm (EMA) s to
+# annual peak flow data from Orestimba Creek, California (11274500), where all
+# values less than $T$ cfs have been recoded as ``less-than T cfs'', for $T$
+# equal to $1, 10, 100,$ and $1000$, respectively.}
+#  \label{figure5-Orestimba4ffa}
+#  \centering
+#    \includegraphics[width=0.8\textwidth]{figure5-Orestimba4ffa.pdf}
+
+#pdf(file='fig4.pdf',height=8,width=8)
+pdf(file='fig5test.pdf',height=8,width=8)
+ layout(matrix(c(1,2,3,4),2,2,byrow=T))
+   plot(dset4rTa,title=c("Orestimba Creek (07377150) Frequency Analysis","T=1"),parG=0,ylim=c(1,200000),PlotCI=F)
+   plot(dset4rTb,title=c("Orestimba Creek (07377150) Frequency Analysis","T=10"),parG=0,ylim=c(1,200000),PlotCI=F)
+   plot(dset4rTc,title=c("Orestimba Creek (07377150) Frequency Analysis","T=100"),parG=0,ylim=c(1,200000),PlotCI=F)
+   plot(dset4rTd,title=c("Orestimba Creek (07377150) Frequency Analysis","T=1000"),parG=0,ylim=c(1,200000),PlotCI=F)
+dev.off()
+
+pdf(file='figure5-Orestimba4ffa.pdf',height=8,width=8)
+ layout(matrix(c(1,2,3,4),2,2,byrow=T))
+   plot(dset4rTa,title=c("T=1"),parG=0,ylim=c(1,200000),PlotCI=F,ylab="Annual Peak Discharge (cfs)")
+   plot(dset4rTb,title=c("T=10"),parG=0,ylim=c(1,200000),PlotCI=F,ylab="Annual Peak Discharge (cfs)")
+   plot(dset4rTc,title=c("T=100"),parG=0,ylim=c(1,200000),PlotCI=F,ylab="Annual Peak Discharge (cfs)")
+   plot(dset4rTd,title=c("T=1000"),parG=0,ylim=c(1,200000),PlotCI=F,ylab="Annual Peak Discharge (cfs)")
+dev.off()
+
+
+   layout(1)
+
+#
+#  (Figure 7)
+#
+#  \caption{LP3 distribution fit using the Expected Moments Algorithm (EMA)  to
+# annual peak flow data from Orestimba Creek, California (11274500), where $20$
+# values less than $1200$ cfs have been recoded as ``less-than 1200 cfs".}
+#   \label{fig:5}
+#   \centering
+#     \includegraphics[width=0.8\textwidth]{fig6.pdf}
+
+  qmin = 1200
+  qu   = pmax(qmin,Q)
+  ql   = ifelse(qu==Q,Q,0.1)
+dset4e<-makeFLOODdata(ql=ql,qu=qu)
+dset4rTe<-makeEMAresult(dset4e,GB=T)
+plot(dset4rTe,title=c("Orestimba Creek Frequency Analysis",paste("T=",qmin)),parG=0,ylim=c(1,200000),PlotCI=F)
+#pdf(file='fig6.pdf',height=8,width=8)
+#  plot(dset4rTe,title=c("Orestimba Creek Frequency Analysis",paste("T=",qmin)),parG=0,ylim=c(1,200000),PlotCI=F)
+#dev.off()
+pdf(file='figure7-Orestimbafinal.pdf',height=8,width=8)
+  plot(dset4rTe,title=c(paste("T=",qmin)),parG=0,ylim=c(1,200000),PlotCI=F,ylab="Annual Peak Discharge (cfs)")
+dev.off()
+
+
+cbind(sort(Q),pvalueW)
+#
+
+#
+# Orestimba Creek p-values (Figure 6)
+#
+#  \caption{Computed $p-$values that correspond to the suspected number of low outliers for the
+# Orestimba Creek flood series from 1932-1973 so that $n=42$.  Note that
+#  $6$ zero flows have been omitted because zero flows are
+# automatically classified as low outliers. For an $\alpha$ equal to 0.10 (red line), $20$ low outliers are identified.}
+#  \label{figure6-Orestimbapval}
+#  \centering
+#  \includegraphics[width=0.8\textwidth]{figure6-Orestimbapval.pdf}
+#
+#
+#
+#
+#  Updated dataset from Orestimba Creek, 1932-2009
+#
+OrestimbaAPF<-c(4260,345,516,1320,1200,2180,3230,115,3440,3070,1880,6450,1290,
+5970,782,0.00,0.00,335,175,2920,3660,147,0.00,16.0,5620,1440,1020,5380,448,0.00,
+1740,8300,156,560,128,4200,0.00,5080,1010,584,0.00,1510,922,1010,0.00,
+0.00,4360,1270,5210,1130,5550,6360,991,50.0,6990,112,0.00,0.00,4.00,
+1260,888,4190,12.0,1200,3130,3320,9470,833,2550,958,425,2790,2990,
+1820,1630,0.0,2110,310)
+
+CalYear     <-c(1932,1933,1934,1935,1936,1937,1938,1939,1940,1941,1942,1943,1944,1945,
+1945,1947,1948,1949,1950,1950,1952,1952,1954,1955,1955,1957,1958,1959,
+1960,1961,1962,1963,1964,1965,1965,1967,1968,1969,1970,1970,1972,1973,
+1974,1975,1976,1977,1978,1979,1980,1981,1982,1983,1983,1985,1986,1987,
+1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,
+2002,2002,2004,2005,2006,2007,2008,2009)
+
+WaterYear   <-  1932:2009
+
+Q <- OrestimbaAPF
+zt <- sort(log(pmax(0.001,Q)))
+  pvalueW<-rep(-99,length(zt));w<-rep(-99,length(zt))
+for(i in 1:32) {w[i]<-(zt[i]-mean(zt[(i+1):length(zt)]))/sqrt(var(zt[(i+1):length(zt)]))}
+for(i in 1:32) {pvalueW[i]<-KthOrderPValueOrthoT(length(zt),i,w[i])$value}
+
+cbind(sort(Q),pvalueW)
+
+pdf(file='fig5.pdf',height=8,width=8)
+ NumberLow = 7:32
+ plot(NumberLow,pvalueW[NumberLow],log='y',
+      xlim=c(5,35),
+      ylim=c(1e-12,1),
+      main=(c("P-values corresponding to Number of Low Outliers","Orestimba Creek (1932-1973)")))
+ abline(h=0.10,col='red')
+dev.off()
+#
+# jfe modify range of plot, axes, etc.
+# make sure that vectors Q, Years correspond to the older 1973 data, not the extended record.
+pdf(file='figure6-Orestimbapval.pdf',height=8,width=8)
+par(mgp=c(2,1,0))
+orestplab <- c(0.0000001,0.000001,0.00001,0.0001,0.001,0.01,0.10)
+NumberLow = 7:32
+plot(NumberLow,pvalueW[NumberLow],log='y',
+      xlim=c(7,21),
+      ylim=c(8e-7,0.2),
+      xlab="Number of Low Outliers",
+      ylab=expression(paste('p-value  ',hat(omega)[paste('[k:n]')])),
+      cex.axis=0.9,
+      yaxt="n",
+     )
+ axis(2, at=orestplab,labels=orestplab,cex.axis=0.9)
+ abline(h=0.10,col='red')
+dev.off()
+#
+#  Example 1: Sacramento River at Shasta Dam
+#
+# Set the Sacramento Shasta flow data
+Shasta1day <- c(34921,19476,24437,44755,53145,29107,102046,37858,161435,71408,79872,44393,
+6771,9519,28300,33936,62689,42520,29204,51803,77184,81549,61599,31992,140880,
+77415,83075,64496,65202,43389,70179,61885,62888,169171,37155,62545,48582,91765,
+164653,62285,43390,74532,190847,56295,22709,8340,95610,30570,89540,30480,81790,
+92570,66160,23980,126980,39673,32897,72974,31487,28971,35598,82188,17942,111630,
+68733,215623,78535,41133,74004,34267,61603,88022,117388,39859,79045,28457,31119)
+# set year label
+Year       <-  1932:2008
+
+Q   <- Shasta1day
+# Take logs of the Sacramento Data
+lSh <- log10(Q)
+
+#  Sacramento Data (Figure 1)
+#
+#  \caption{Observed annual 1-day peak flows on the Sacramento River at Shasta Dam from 1932-2008
+# ($n=77$ total observations).  Red line indicates graphical fit to largest
+# $n=74$ observations.}
+#  \label{figure1-Sacflow}
+#  \centering
+#  \includegraphics[width=0.8\textwidth]{figure1-Sacflow.pdf}
+#
+#pdf(file='fig7.pdf',height=8,width=8)
+#  plot(qnorm(1:length(lSh)/(length(lSh)+1)),sort(Q),
+#     main=c("Sacramento River at Shasta Dam","One-Day Peak Flows from 1932-2008"),
+#     log='y',xlab="Z-Score",ylab="Discharge",col=c(rep('red',3),rep('blue',74)))
+#  abline(coef=c(4.74,.277),col='red')
+#dev.off()
+#
+# jfe
+# eliminate main title and change x,y labels and figure name:
+pdf(file='figure1-Sacflow.pdf',height=8,width=8)
+plot(qnorm(1:length(lSh)/(length(lSh)+1)),sort(Q),
+     log='y',xlab="Standard Normal Variate (z)",ylab="Discharge (cfs)",col=c(rep('red',3),rep('blue',74)))
+  abline(coef=c(4.74,.277),col='red')
+dev.off()
+#
+# test (x,y) scales (todo later)
+#
+#
+# compute Sacramento P-values
+# make sure to load LowOutliers_jfe.r, with pwd as cwd './'
+#
+zt <- sort(log10(pmax(0.001,Q)))
+  pvalueW<-rep(-99,length(zt));w<-rep(-99,length(zt))
+for(i in 1:22) {w[i]<-(zt[i]-mean(zt[(i+1):length(zt)]))/sqrt(var(zt[(i+1):length(zt)]))}
+for(i in 1:22) {pvalueW[i]<-KthOrderPValueOrthoT(length(zt),i,w[i])$value}
+
+cbind(sort(Q),pvalueW)
+ NumberLow = 1:22
+
+#  Sacramento P-values (Figure 3)
+#
+#  \caption{Computed $p-$values that correspond to the suspected number of low outliers for
+# the Sacramento River flood series from 1932-2008 ($n=77$).
+# For an $\alpha$ equal to 0.10 (red line), three low outliers are identified.}
+#  \label{figure3-Sacpval}
+#  \centering
+#  \includegraphics[width=0.8\textwidth]{figure3-Sacpval.pdf}
+#
+# jfe modify to eliminate main heading, add (x,y) labels at specific locations
+#
+#pdf(file='fig8.pdf',height=8,width=8)
+# plot(NumberLow,pvalueW[NumberLow],log='y',
+#    main=(c("P-values corresponding to Number of Low Outliers",
+#    "Sacramento River at Shasta Dam, 1932-2008")))
+#  abline(h=0.10,col='red')
+#dev.off()
+#
+# plot(NumberLow,pvalueW[NumberLow],log='y',xlab="Number of Low Outliers",ylab="p-value W",
+#    main=(c("P-values corresponding to Number of Low Outliers",
+#    "Sacramento River at Shasta Dam, 1932-2008")))
+#  abline(h=0.10,col='red')
+#
+# plot(NumberLow,pvalueW[NumberLow],log='y',xlab="Number of Low Outliers",ylab="p-value W[k:n]",)
+#  abline(h=0.10,col='red')
+#
+# plot(NumberLow,pvalueW[NumberLow],log='y',xlab="Number of Low Outliers",ylab="p-value W[k:n]",ylim=c(0.0008,1.0001))
+#  abline(h=0.10,col='red')
+#
+# plot(NumberLow,pvalueW[NumberLow],log='y',xlab="Number of Low Outliers",ylab="p-value W[k:n]",ylim=c(0.0008,1.1))
+#  abline(h=0.10,col='red')
+#
+# refine y-axis
+# see hints: http://www.statmethods.net/advgraphs/axes.html
+# set ylabels vector
+sacplab <- c(0.001,0.005,0.010,0.050,0.100,0.500,1.000)
+# suppress y label with yaxt="n"
+# plot(NumberLow,pvalueW[NumberLow],log='y',xlab="Number of Low Outliers",ylab="p-value W[k:n]",yaxt="n")
+# plot(NumberLow,pvalueW[NumberLow],log='y',xlab="Number of Low Outliers",ylab="p-value W[k:n]",ylim=c(0.0008,1.1),cex.axis=0.9)
+## draw an axis on the left: y-axis
+#axis(2, at=x,labels=x, col.axis="red", las=2)
+#axis(2, at=sacplab,labels=sacplab)
+#
+# plot(NumberLow,pvalueW[NumberLow],log='y',xlab="Number of Low Outliers",ylab="p-value W[k:n]",ylim=c(0.0008,1.1),yaxt="n")
+
+pdf(file='figure3-Sacpval.pdf',height=8,width=8)
+par(mgp=c(2,1,0))
+plot(NumberLow,pvalueW[NumberLow],log='y',xlab="Number of Low Outliers",ylab=expression(paste('p-value  ',hat(omega)[paste('[k:n]')])),ylim=c(0.0008,1.1),yaxt="n")
+ axis(2, at=sacplab,labels=sacplab,cex.axis=0.9)
+ abline(h=0.10,col='red')
+dev.off()
+#
+#
+# test with math notation
+# commented out after testing
+require(graphics)
+#matplot(NumberLow,pvalueW[NumberLow],log='y',xlab="Number of Low Outliers",ylab=expression("p-value ", hat(omega)[k:n]),ylim=c(0.0008,1.1),yaxt="n")
+#
+#plot(NumberLow,pvalueW[NumberLow],log='y',xlab="Number of Low Outliers",ylab=expression(hat(omega[k:n])),ylim=c(0.0008,1.1),yaxt="n")
+# axis(2, at=sacplab,labels=sacplab,cex.axis=0.9)
+# abline(h=0.10,col='red')
+#
+#plot(NumberLow,pvalueW[NumberLow],log='y',xlab="Number of Low Outliers",ylab=expression(paste('pvalue  ',hat(omega[k:n]))),ylim=c(0.0008,1.1),yaxt="n")
+# axis(2, at=sacplab,labels=sacplab,cex.axis=0.9)
+# abline(h=0.10,col='red')
+#
+#plot(NumberLow,pvalueW[NumberLow],log='y',xlab="Number of Low Outliers",ylab=expression(paste('pvalue  ',hat(omega[paste('[k:n]')]))),ylim=c(0.0008,1.1),yaxt="n")
+# axis(2, at=sacplab,labels=sacplab,cex.axis=0.9)
+# abline(h=0.10,col='red')
+#
+#http://rgraphics.limnology.wisc.edu/rmargins_sf.php
+# Plot the data
+
+# - Specify the layout parameters before any plotting
+#   If you don't specify them before any plotting, the
+#   results will be inconsistent and misaligned.
+#
+# - oma stands for 'Outer Margin Area', or the total margin space that is outside
+#   of the standard plotting region (see graph)
+#
+# - The vector is ordered, the first value corresponding to the bottom. The entire
+#   array is c(bottom, left, top, right)
+#
+# - All of the alternatives are:
+#   - oma: Specify width of margins in number of lines
+#   - omi: Specify width of margins in inches
+#   - omd: Specify width of margins in 'device coordinates'
+#       - Device coordinates place (0,0) in the upper left and (1,1) in the
+#         lower right corner
+
+#par(oma=c(3,3,3,3))
+#par(oma=c(0,1,0,0)) #default
+#pdf(file='figure3-testpval.pdf',height=8,width=8)
+
+#pdf(file='figure3-testpval.pdf',height=8,width=8)
+#par(oma=c(0,2,0,0))
+#par(mgp=c(3,1,0))#default
+# this value give us enough room for tilde on omega
+par(mgp=c(2,1,0))
+plot(NumberLow,pvalueW[NumberLow],log='y',xlab="Number of Low Outliers",ylab=expression(paste('p-value  ',hat(omega)[paste('[k:n]')])),ylim=c(0.0008,1.1),yaxt="n")
+ axis(2, at=sacplab,labels=sacplab,cex.axis=0.9)
+ abline(h=0.10,col='red')
+dev.off()
+#
+#plot(NumberLow,pvalueW[NumberLow],log='y',xlab="Number of Low Outliers",ylab=expression(Area==pi*r^2),ylim=c(0.0008,1.1),yaxt="n")
+# axis(2, at=sacplab,labels=sacplab,cex.axis=0.9)
+# abline(h=0.10,col='red')
+#
+#
+# Graphic showing true alpha-levels for MGBT
+#
+CritValuesMC <- function(
+    nrep        =   50,
+    kvs         =   c(1,3,0.25,0.5),
+    n           =   100,
+    test_quants =   c(0.01,0.10,0.50),
+    ndigits     =     3,
+    seed        =     1
+                                   )
+  {        set.seed(seed)
+           k_values = ifelse(kvs>=1,kvs,ceiling(n*kvs))
+     z  <- replicate(nrep,
+       {x<-sort(rnorm(n));
+        sapply(k_values,function(r){xr<-x[r];x2<-x[(r+1):n];
+       (xr-mean(x2))/sqrt(var(x2))}
+       )}
+     )
+  res<-round(apply(z,MARGIN=1,quantile,test_quants),ndigits)
+  colnames(res)<-k_values
+  res}
+
+#   n=100;nrep=100000;test_quants=c(.05,1);Vr=1:10
+#   z<-CritValuesMC(n=n,nrep=nrep,test_quants=test_quants)
+#   sapply(Vr,function(r)KthOrderPValueOrthoT(n,r,z[1,r])$value)
+#   sapply(Vr,function(r)KthOrderPValueOrthoT(n,r,z[2,r])$value)
+
+# MC8  <- CritValuesMC(n=8,nrep=10^7)
+#   save(MC8,file="MC8.sav")
+# MC24 <- CritValuesMC(n=24,nrep=10^7)
+#   save(MC24,file="MC24.sav")
+# MC48 <- CritValuesMC(n=48,nrep=10^7)
+#   save(MC48,file="MC48.sav")
+# MC200<- CritValuesMC(n=200,nrep=10^7)
+#   save(MC200,file="MC200.sav")
+
+    load("MC8.sav");load("MC24.sav");load("MC48.sav");load("MC200.sav");
+  n<- 8
+  critv <- MC8
+  pMC8  <- critv
+for(i in 1:3)
+  for(j in 1:4){ pMC8[i,j]=KthOrderPValueOrthoT(n=n,r=as.numeric(colnames(critv))[j],eta=critv[i,j])$value}
+
+  n<- 24
+  critv <- MC24
+  pMC24  <- critv
+for(i in 1:3)
+  for(j in 1:4){ pMC24[i,j]=KthOrderPValueOrthoT(n=n,r=as.numeric(colnames(critv))[j],eta=critv[i,j])$value}
+
+    n<- 48
+  critv <- MC48
+  pMC48  <- critv
+for(i in 1:3)
+  for(j in 1:4){ pMC48[i,j]=KthOrderPValueOrthoT(n=n,r=as.numeric(colnames(critv))[j],eta=critv[i,j])$value}
+
+    n<- 200
+  critv <- MC200
+  pMC200  <- critv
+for(i in 1:3)
+  for(j in 1:4){ pMC200[i,j]=KthOrderPValueOrthoT(n=n,r=as.numeric(colnames(critv))[j],eta=critv[i,j])$value}
+
+#   (Figure 4)
+#  \caption{Observed attained levels of significance for Multiple Grubbs-Beck
+# Test for sample sizes $n=8, 24, 48, 200$, number of suspected low outliers
+# $k=1, 3, n/4, n/2$ and nominal significance levels $\alpha = 50\%, 10\%, 1\%$.
+# Results based on $10$ million simulated normal samples.}
+#  \label{fig:9b}
+#  \centering
+#  \includegraphics[width=0.8\textwidth]{fig9b.pdf}
+
+pdf(file='fig9b.pdf',height=8,width=8);
+       alpha   = c(0.01,0.10,0.50); alphapct=100*alpha
+       upbnd   = c(.1,.2,.6)
+      n      = c(8,24,48,200)
+      k      = c(1,3,"n/4","n/2")
+       layout(mat=array(1:12,dim=c(3,4)))
+       for(j in 1:length(k)){
+         for(i in length(alpha):1){
+             barplot(cbind(pMC8,pMC24,pMC48,pMC200)[i,seq(j,16,4)],
+               beside=T,ylim=c(0.0,upbnd[i]),names.arg=n,xlab=paste("k = ",k[j]),ylab="attained alpha level")
+             abline(h=alpha[i],col='red')
+             if(j==1){
+               if(i==3)title(expression(paste(alpha == 50,"%             ")))
+               if(i==2)title(expression(paste(alpha == 10,"%             ")))
+               if(i==1)title(expression(paste(alpha == 1,"%              ")))
+                     }
+         }
+       }
+dev.off()
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  COMPARISON BETWEEN RESULTS OF EXACT GB, APPROXIMATE GB, AND GGBT FOR
+#  10% TEST WITH ONE SUSPECTED LOW OUTLIER
+#
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  traditional Grubbs-Beck critical values for 10% test; JRS Approximation
+#
+.kngb   <- function(n){-0.9043+3.345*sqrt(log10(n))-0.4046*log10(n)}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  traditional Grubbs-Beck critical values for 10% test as in Bulletin 17B
+#
+critK10<-function(n) {if(n <10 | n>149)return(NA);
+c(2.036,2.088,2.134,2.175,2.213,2.247,2.279,2.309,2.335,2.361,2.385,2.408,2.429,2.448,
+2.467,2.486,2.502,2.519,2.534,2.549,2.563,2.577,2.591,2.604,2.616,2.628,2.639,2.650,2.661,2.671,
+2.682,2.692,2.700,2.710,2.719,2.727,2.736,2.744,2.753,2.760,2.768,2.775,2.783,2.790,2.798,2.804,
+2.811,2.818,2.824,2.831,2.837,2.842,2.849,2.854,2.860,2.866,2.871,2.877,2.883,2.888,2.893,2.897,
+2.903,2.908,2.912,2.917,2.922,2.927,2.931,2.935,2.940,2.945,2.949,2.953,2.957,2.961,2.966,2.970,
+2.973,2.977,2.981,2.984,2.989,2.993,2.996,3.000,3.003,3.006,3.011,3.014,3.017,3.021,3.024,3.027,
+3.030,3.033,3.037,3.040,3.043,3.046,3.049,3.052,3.055,3.058,3.061,3.064,3.067,3.070,3.073,3.075,
+3.078,3.081,3.083,3.086,3.089,3.092,3.095,3.097,3.100,3.102,3.104,3.107,3.109,3.112,3.114,3.116,
+3.119,3.122,3.124,3.126,3.129,3.131,3.133,3.135,3.138,3.140,3.142,3.144,3.146,3.148)[n-9]}
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  New Generalized Grubbs-Beck critical values for 10% test; TAC Approximation
+#
+  fw  <- function(n,w){n*w/((n-1)*sqrt((1/(n-2))*(n-1-(n/(n-1))*w^2)))}
+  fw1 <- function(n,w1){-sqrt(((n-1)^3*w1^2)/(n^2*(n-2)+w1^2*n*(n-1)))}
+GGBK  <-function(n) fw1(n,CritK(n,1,.1,-fw(n,critK10(n))))
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  Comparing the approximations
+#
+  n=10:149
+  Ktrue = sapply(n,critK10)
+  KJRS  = sapply(n,.kngb)
+  KTAC  = sapply(n,GGBK)
+result<-data.frame(N=n,Ktrue=Ktrue,Kjrs=KJRS,Kggbt=-KTAC,Diff1=KJRS-Ktrue,Diff2=KTAC+Ktrue)
+round(result,3)
+
+
+
+
+
+
+
+#****|==|====-====|====-====|====-====|====-====|====-====|====-====|==////////
+#
+#  True alpha-levels for the Grubbs-Beck test wrt multiple low outliers
+#     Both iterated and non-iterated
+#
+
+GB_PvalueDat <- function(n=25,Iterate=F,nrep=10^5,first=1){
+    replicate(n=100000,{
+      ktot    <- 0
+      x       <- sort(rnorm(n))[first:n]
+      k       <- sum(((x-mean(x))/sqrt(var(x)))< (-.kngb(length(x))) )
+    if(!Iterate){ktot<-k}
+    else{
+    while(k>0) {
+      ktot    <- ktot+k
+      x       <- x[(k+1):length(x)]
+      k<-sum(((x-mean(x))/sqrt(var(x)))< (-.kngb(length(x))) )
+    }}
+    ktot}
+    )
+    }
+
+
+  nobs=100
+  nrep=10^5
+#  Non-iterated case
+resN<-GB_PvalueDat(n=nobs,Iterate=F,nrep=nrep)
+  par(lab=c(4,5,1))
+plot(1:4,sapply(1:4,function(x)sum(resN==x)/length(res1)),
+    main=c("Non-Iterated Grubbs-Beck","(n=25)"),
+    ylim=c(0,.10),
+    xlab="k",
+    ylab="P[Reject H0 |k]")
+  abline(h=.1,col='red')
+  abline(h=0,col='blue')
+
+#  Iterated case
+resI<-GB_PvalueDat(n=nobs,Iterate=T,nrep=nrep)
+  par(lab=c(4,5,1))
+plot(1:4,sapply(1:4,function(x)sum(resI==x)/length(res1)),
+    main=c("Iterated Grubbs-Beck","(n=25)"),
+    ylim=c(0,.10),
+    xlab="k",
+    ylab="P[Reject H0 |k]")
+  abline(h=.1,col='red')
+  abline(h=0,col='blue')
+
+# Always discarding smallest observation
+resK2<-GB_PvalueDat(n=nobs,Iterate=F,first=2,nrep=nrep)
+  par(lab=c(4,5,1))
+plot(1:4,sapply(1:4,function(x)sum(resK2==x)/length(res1)),
+    main=c("Non-Iterated Grubbs-Beck","(n=25, discarded smallest observation)"),
+    ylim=c(0,.10),
+    xlab="k",
+    ylab="P[Reject H0 |k]")
+  abline(h=.1,col='red')
+  abline(h=0,col='blue')
+
+# Always discarding 5 smallest observations
+resK6<-GB_PvalueDat(n=nobs,Iterate=F,first=6,nrep=nrep)
+  par(lab=c(4,5,1))
+plot(1:4,sapply(1:4,function(x)sum(resK6==x)/length(res1)),
+    main=c("Non-Iterated Grubbs-Beck","(n=25, discarded 5 smallest observations)"),
+    ylim=c(0,.10),
+    xlab="k",
+    ylab="P[Reject H0 |k]")
+  abline(h=.1,col='red')
+  abline(h=0,col='blue')

@@ -1,0 +1,15 @@
+citHeader("To cite MGBT in publications, please use:")
+
+bibentry(bibtype = "Manual",
+ author = c(person(c("William", "H."), "Asquith",  role=c("aut", "cre")),
+            person(c("John",    "F."), "England",  role=c("aut", "ctb")),
+            person(c("George",  "R."), "Herrmann", role=c("ctb"))),
+  title = "MGBT---Multiple Grubbs-Beck Low-Outlier Test",
+  organization = "U.S. Geological Survey",
+  address="Reston, Va.",
+  year = "2019",
+  note = "R package version 1.0.0",
+  url = "https://code.usgs.gov/water/stats/MGBT",
+  key = "MGBT-package",
+  textVersion = "Asquith, W.H., and England, J.F., with Herrmann, G.R., 2019, MGBT---Multiple Grubbs-Beck low-outlier test: R package, U.S. Geological Survey software release, Reston, Va., https://doi.org/10.5066/P9CW9EF0"
+)

@@ -1,0 +1,129 @@
+--------------------------------------------------------------------------------
+NEWS for R Package "MGBT"
+--------------------------------------------------------------------------------
+1.0.2 -- 2019-10-11 (2nd CRAN Presubmission Review Reconciliations)
+1.  The CRAN team provided additional critique requiring GGBK.R to be modified
+      to issue a stop() instead of warning();return(NULL). The GGBK.Rd example
+      was not modified to a \donttest{} from \dontrun{} as per CRAN advice because
+      the stop() would cause "R CMD check --as-cran --run-donttest" to FAIL.
+2.  Converted \dontrun{} to \donttest{} in CritK.Rd.
+3.  Converted \dontrun{} to \donttest{} in RthOrderPValueOrthoT.Rd.
+      Some modification to arguments in the Examples made to keep reasonable
+      run times when --run-donttest is used. Notes were made to TAC's original
+      settings in these examples where needed.
+4.  Converted \dontrun{} to \donttest{} in RSlo.Rd, but slight modification
+      to the used r-order statistics. Sample size kept at n=100, but the maximum
+      order statistic in is maxr=n/10 instead of n/2, which was the entire lower
+      tail. This is done so that forced testing of the example can still be
+      reasonably completed when --run-donttest is used. Notes were made to TAC's
+      original settings in the example.
+5.  Converted \dontrun{} to \donttest{} in critK10.Rd. However, one \dontrun{}
+      is deliberately retained because the original example uses the GGBK(),
+      which now issues a stop().
+6.  Converted \dontrun{} to \donttest{} in makeWaterYear.Rd, plotFFQevol.Rd,
+      plotPeaks.Rd, and splitPeakCodes.Rd.
+7.  Added dataRetrieval to the DESCRIPTION:Suggests. 
+8.  Added USGS NWIS citation to makeWaterYear.Rd, plotPeaks.Rd, and
+      splitPeakCodes.Rd.
+9.  Reversed the ordering of this NEWS.
+
+
+1.0.1 -- 2019-10-01 (1st CRAN Presubmission Review Reconciliations)
+1.  Added two references and DOI numbers to the DESCRIPTION:Description.
+2.  Opened up EMS.Rd to the running of its examples.
+3.  Added note about very long run times for some of the \dontrun{} remaining for
+      RSlo.Rd and RthOrderPValueOrthoT.Rd.
+4.  Switched selected \dontrun{} to \donttest{} in documentation files BLlo.Rd,
+      critK10.Rd (also added another example that does not use the GGBK),
+      MGBT.Rd, MGBT-package.Rd, and RthOrderPValueOrthoT.Rd.
+5.  Confirmed passage of R CMD check --as-cran --run-donttest MGBT
+6.  Added note about the deliberate non-need of the dataRetrieval package for MGBT
+      related to the \dontrun{} use in makeWaterYear.Rd, plotPeaks.Rd, and
+      splitPeakCodes.Rd.
+7.  Added pairing of opar <- par(no.readonly=TRUE) ... on.exit(par(opar))
+      in plotPeaks.R and added xlab/ylab in the plotPeaks.Rd \dontrun{} examples.
+8.  Added pairing of the following commands in plotFFQevol.Rd for restoration of 
+      defaults:  opts <- options(scipen=7)     ...  options(opts)
+                 opar <- par(no.readonly=TRUE) ...  par(opar)
+9.  Added path=tempdir() in plotFFQevol.R with argument silent message() of file 
+      locations.
+
+
+1.0.0 -- 2019-09-25
+1.  First attempt for a CRAN release (GitLab tagged "v1.0.0")
+
+
+0.9.9 -- 2019-09-24
+1.  Preparing various files for the prospect of being publically available as
+      approved software by USGS along https://code.usgs.gov/water/stats/MGBT.
+
+
+0.9.4 -- 2019-08-28
+1.  Adjusted plotPeaks.R/Rd with coordination with Nancy Barth, to use D as the
+      plotting character instead of the diamond, and updated ./inst/legend accordingly.
+2.  Adjusted beginning of the suite of MGBT*() functions to test for as.data.frame and
+      then attempt to extract a peak_va columns and added as.numeric conversion. This
+      accelerates using the MGBT() functions with data directly from USGS NWIS.
+
+
+0.9.3 -- 2019-08-13
+1.  Adjustments to supporting files (not .R or .Rd) in preparation for bureau approval
+      in parallel to working on the DOI number.
+
+
+0.9.2 -- 2019-08-05
+1.  Adjustments to supporting files (not .R or .Rd) in preparation for bureau approval.
+
+
+0.9.1 -- 2019-07-30
+1.  Auditing package README files as further preparation for publication.
+2.  Added the zzz.R for the .onAttach().
+
+
+0.7.9 -- 2019-07-27
+1.  Added as.numeric() casing of gage_ht inside splitPeakCodes().
+2.  Made many extensions to README.md in response to Nancy Barth peer review along with
+      phone discussions with John England (2019-05-26).
+
+
+0.7.8 -- 2019-07-25
+1.  Added support for the "O" discharge qualification code that was brought to the
+      authors' attention by Nancy Barth. Documentation upgrade in MGBT-package.Rd from
+      John England recommendations.
+
+
+0.7.7 -- 2019-05-21
+1.  Added more features to plotPeaks() to plot more nuances of the peak database
+      related to presence of gage height but no discharge and plotting when double
+      missing discharge and gage height exists.
+
+
+0.7.6 -- 2019-03-30
+1.  Another editing pass on the documentation.
+
+
+0.7.5 -- 2019-02-27
+1. Added warning to multiple gages in splitPeakCodes() and early return NULL.
+     This is related to data-mining scale testing on a project of one of the authors.
+     Also minor adjustments to splitPeakCodes.Rd.
+
+
+0.7.4 -- 2019-02-01
+1.  Corrected the terminal year in splitPeakCodes().
+
+
+0.7.3--Documentation audit.
+
+
+0.7.2 -— Manually plotting the vertical axes in plotPeaks().
+
+
+0.7.1 -- Slight interfacing fix in plotPeaks().
+
+
+0.0.6 -- Continued interest in the project during summer 2018
+1.  Added plotPeaks(), makeWaterYear(), and makeWaterYear().
+2.  The lmomco package suggested as it is needed for plotPeaks().
+
+
+0.0.1 -- Creation of the project during summer 2017

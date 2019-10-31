@@ -1,0 +1,94 @@
+library(lmomco) # though MGBT will load it
+library(MGBT)
+library(dataRetrieval)
+
+# Some helpful defaults
+csvfile <- "testsites.txt"
+pdffile <- "testsites.pdf"
+rdfile  <- "testsites.RData"
+sdecade <- 1890
+edecade <- 2010
+
+# R --vanilla --args csvfile "trends_SouthCentral.csv"
+#                    pdffile "SouthCentralLogTimeSeries.pdf"
+library(batch) # support for batch processing if ever needed
+args <- parseCommandArgs(evaluate=TRUE)
+sdecade <- as.numeric(sdecade) # in case of command line resetting
+edecade <- as.numeric(edecade) # in case of command line resetting
+# note that decade padding is done also internally in plotPeaks() to get
+# the data points inside the axis limits
+
+# If these are defined once, then one can comment out the next two lines
+# so that development or testing on (say) plotPeaks() could be made w/o
+# repulling the data from the Internet because we have a caching mechanism.
+PK  <- new.env() # environment to house ALL peaks
+LOT <- new.env() # environment to house the low-outlier thresholds
+# One accessed the information in the environment with syntax like:
+# get.that.data.frame <- PK$"08167000"
+# The LOT is cached too as the MGBT() process can be time consuming.
+sites <- NULL
+
+if(file.exists(rdfile)) {
+  load(rdfile) # We can have a premade RData file laying around instead
+  sites <- ls(PK)
+} else if(file.exists(csvfile)) {
+  D <- read.table(csvfile, h=TRUE, sep=",", colClasses="character")
+  nms <- names(D); nms[nms == "site_id"] <- "site_no" # standardizing to NWIS
+  names(D) <- nms # site numbering nomenclature
+  D$site_no <- gsub("^\\s+", "", D$site_no) # in case of spurious leading and
+  D$site_no <- gsub("\\s+$", "", D$site_no) # trailing space, strip them out.
+  sites <- D$site_no
+} else {
+  stop("No data available for processing")
+}
+
+# A project team associated with the author has a leading state abbreviation
+# in front of the USGS streamgage id numbers, so we remove them here.
+sites <- gsub("^[A-Z][A-Z]", "", sites)
+sites <- sort(sites) # Danger, must must sort after the leading characters stripped
+
+SF <- dataRetrieval::readNWISsite(sites) # grab the site file
+SF <- SF[SF$agency_cd == "USGS",] # only retain USGS, Texas has a couple of
+# gages cross listed as USCOE, so we need to drop potential duplicates.
+if(length(sites) != length(SF$station_nm)) {
+  stop("fatal mismatch in site number and station name lengths")
+}
+idname <- paste(sites, SF$station_nm) # for a titling of the plots
+
+
+n <- length(sites); i <- 0 # a counter
+if(! is.na(pdffile)) pdf(pdffile, useDingbats=FALSE)
+for(site in sites) {
+  i <- i + 1
+  message("  site=",site," as ",i," of ",n)
+  pk <- lot <- NULL # insurance policy to NULLify if code become "complicated"
+  if(exists(site, PK)) { # trigger the cache if present
+    pk <- get(site, envir=PK) # by this test, the user could avoid repulling
+  } else {
+    pk <- dataRetrieval::readNWISpeak(site,convert=FALSE) # CONVERT==FALSE!
+    pk$peak_va <- as.numeric(pk$peak_va) # because convert=FALSE
+    pk <- MGBT::splitPeakCodes(MGBT::makeWaterYear(pk)) # see documentation
+    # these operations are added convenience columns to the table retrieved
+    pk <- pk[pk$water_yr <= 2017,] # this subsetting is made to try to
+    # enforce similarity in output to that provided in testsites.pdf
+    assign(site, pk, envir=PK) # store the peak tables separately
+  }
+  if(exists(site, LOT)) { # trigger the cache if present
+    lot <- get(site, envir=LOT) # again a caching mechanism
+  } else {
+    lot <- MGBT::MGBT(pk$peak_va[! is.na(pk$peak_va)])$LOThresh
+    assign(site, lot, envir=LOT)
+  }
+  plotPeaks(pk, lot=lot, codes=TRUE,
+                ylab="Peak discharge, in cubic feet per second",
+                xlim=c(sdecade,edecade), site=idname[sites == site])
+  # If you desire to test or change plotPeaks(), open its sources, changes the
+  # function name to plotPeaks2 and change it here in this loop, then modify
+  # and source it, and rerun this script. Because of this potential desire,
+  # the pkg:: is not prepended (MGBT::). Such prepending is generally a good idea
+  # even if not required so that a user can quickly see which package provides what
+  # functionality.
+}
+if(! is.na(pdffile)) dev.off()
+
+if(! is.na(rdfile)) save(PK, LOT, SF, file=rdfile)
