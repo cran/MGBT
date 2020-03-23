@@ -1,8 +1,8 @@
 importFrom("stats", "dnorm", "integrate", "pnorm", "pt", "qbeta",
                     "qnorm", "runif", "uniroot", "var")
-importFrom("graphics", "plot", "points", "lines", "rug")
+importFrom("graphics", "plot", "points", "lines", "rug", "text")
 importFrom("graphics", "axTicks", "axis", "legend", "mtext", "par", "polygon")
-importFrom("grDevices", "grey")
+importFrom("grDevices", "grey", "dev.off", "pdf")
 importFrom("utils", "write.table")
 #-----------------------------------------------
 # Following is not explicitly needed because Suggests: lmomco is used
@@ -34,4 +34,5 @@ export(VMS)
 export(makeWaterYear)
 export(plotFFQevol)
 export(plotPeaks)
+export(plotPeaks_batch)
 export(splitPeakCodes)

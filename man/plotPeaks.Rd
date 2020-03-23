@@ -17,7 +17,7 @@ plotPeaks(x, codes=TRUE, lot=NULL, site="",
 \arguments{
   \item{x}{A \code{data.frame} having a mandatory column titled \code{peak_va} and \code{peak_cd}. It is advised to have run \code{\link{makeWaterYear}} and \code{\link{splitPeakCodes}} first, but if columns resulting from those two functions are are not detected, then the water year column and code split are made internally but not returned;}
   \item{codes}{A logical to trigger use of character plotting characters and not symbols;}
-  \item{lot}{The low-outlier threshold, but if omitted, then \code{\link{MGBT}} is triggered internally;}
+  \item{lot}{The low-outlier threshold, but if omitted, then \code{\link{MGBT}} is triggered internally. Use of \code{lot=0} is a mechansim to effectively bypass the plotting of a low-outlier threshold because a logarithmic vertical axis is used, and this setting would bypass a call to \code{\link{MGBT}};}
   \item{site}{An optional character string for a plot title, and in practice, this is expected to be a streamgage location;}
   \item{xlab}{An optional x-label of the plot;}
   \item{ylab}{An optional y-label of the plot;}

@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 NEWS for R Package "MGBT"
 --------------------------------------------------------------------------------
+1.0.4 -- 2020-03-23
+1.  Added more additional discussion of the lot argument within plotPeaks.Rd.
+2.  Minor improvement to messaging and "error" trapping with an empty data
+      frame passed to splitPeakCodes() and switched from warning() to 
+      message() for the case when more than one streamgage exists on the data
+      frame, which is a situation never supported by anyway in prior releases.
+3.  Added the plotPeaks_batch() as a wrapper on plotPeaks() for multiple
+      streamgage processing.
+
+
+1.0.3 -- 2019-11-26 (Documentation updating)
+1.  Added the ./inst/INSTALL_HELP.md to detail use of RStudio on Windows for
+      package installation from sources.
+2.  Additional tune up of several README.md.
+
+
 1.0.2 -- 2019-10-11 (2nd CRAN Presubmission Review Reconciliations)
 1.  The CRAN team provided additional critique requiring GGBK.R to be modified
       to issue a stop() instead of warning();return(NULL). The GGBK.Rd example

@@ -1,6 +1,6 @@
-eb178a03ef40bc4143bea63b2c933a5d *DESCRIPTION
-a94dab7cbae559c6810ffe10d155d5c2 *NAMESPACE
-e684655cb5f4435a97168c7b408302f9 *NEWS
+8d69708bdb016fefd686d25eca4f0c5f *DESCRIPTION
+854a7e4f94b67d3ae12b9d30d0d296bf *NAMESPACE
+dde63a49aea773cdbca6e32b7f41aa01 *NEWS
 b15fc9ee6a5b8fba2530b9e670300067 *R/ASlo.R
 3b3881e55b3e6f9881bc97a7e0c67358 *R/BLlo.R
 5f66c5d18ce062e530f9f005030ef65b *R/CondMoms.R
@@ -16,10 +16,12 @@ c766949b3a709d46a5a31b9833f95ad7 *R/makeWaterYear.R
 0c6c6806c9bfb6c701183f3d1c45647e *R/peta.R
 dd4dc8577a684a97813cc9c665a27e57 *R/plotFFQevol.R
 6303060cc082f812fd057a96ba23e81f *R/plotPeaks.R
-7292e44139f7649ff59f894350e20595 *R/splitPeakCodes.R
+66f43a9e086a2d82d4d356dd1f3eeeb0 *R/plotPeaks_batch.R
+2a1e543bf786be99c0209bd5b700edff *R/splitPeakCodes.R
 c853274b8d26b537019eae93906b76fb *R/zzz.R
-d4ffdc89a0506d13259a497f678f201c *README.md
-a8ef3ac5d415a88430d1efc58fd2af6f *inst/CITATION
+8e280cc014331e86d4e4c6dbd4a03b41 *README.md
+4f90363fcc10cda9a33410fc3c69c4b4 *inst/CITATION
+7a9430963865135d2a88a09cacfbc457 *inst/INSTALL_HELP.md
 6ce5a609b3dca6db332f988a50005502 *inst/README.md
 0146cc94d1e35146922bbf1749e58cd5 *inst/helpers/README.md
 33f280f0a51e722fd7611765ffe74b87 *inst/helpers/testsites.pdf
@@ -39,7 +41,10 @@ dd60aae26675417966cb0f48dad2488f *inst/sources/P3_085_wha(R).txt
 a794fa2114a227b1eaf93f5bb90fcf63 *inst/sources/README.md
 fbb23b466a6b21b2403262c94bfd41d8 *inst/www/08080750.png
 be8d9c47f31a13a05c834cf3ba027bd2 *inst/www/08167000.png
-cfee466b252b501dff27bad9e887d2cf *inst/www/README.md
+8f066b3d886b0bb33fa2ff1e9642040b *inst/www/README.md
+f2b823a1b2a936309b4365cfe0660af0 *inst/www/step1_src_MGBT_install.png
+5ea07986e0dddfd36d9f91a3523358fe *inst/www/step2_src_MGBT_install.png
+b1290c713bf3a3e06e4caf85620f432b *inst/www/step3_src_MGBT_install.png
 93168d3883122198c6207b684b269c80 *man/ASlo.Rd
 ad77513b5220b89ab3bd4f30d74de696 *man/BLlo.Rd
 396c64dafcfd2448e2aa58329ad28d72 *man/CondMomsChi2.Rd
@@ -58,5 +63,6 @@ ca2a5d2f9b98d2e654aa1619b7b00a6f *man/VMS.Rd
 b9e7c774a5739d7c8c64d9edd7451283 *man/makeWaterYear.Rd
 0a16281d0157d8577d3eb532396db45f *man/peta.Rd
 4685eac36bd312447aacceec9fb65d16 *man/plotFFQevol.Rd
-661861a945dadf0c04538480af92dd86 *man/plotPeaks.Rd
+5f400beb04fff0d4e3626c6f07d202ba *man/plotPeaks.Rd
+ccce927f5fcdaba37957bec0b8f17352 *man/plotPeaks_batch.Rd
 6471a140d0bac709b10d2b4c9a09d133 *man/splitPeakCodes.Rd

@@ -1,9 +1,10 @@
-README (path ./MGBT/inst/www/README.md)
+# README (path ./MGBT/inst/www/README.md)
 
-Author:           William H. Asquith
-Point of contact: William H. Asquith (wasquith@usgs.gov)
+#### Author:           William H. Asquith
+#### Point of contact: William H. Asquith (wasquith@usgs.gov)
 
-------------------------------------------------------------------------------------------
+***
+***
 
 This README file describes the contents of the above path. This directory is to contain
 various files to augment the Internet viewing of the code base as marked up by GitHub,

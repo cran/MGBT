@@ -3,13 +3,17 @@
       warning("a data.frame as in 'dataRetrieval::readNWISpeak(station, convertType=FALSE)' required")
       return(NULL)
    }
-   if(length(unique(x$site_no)) != 1) {
-      warning("more than one site_no encountered, please just use one station ",
+   nu <- length(unique(x$site_no))
+   if(nu > 1) {
+      message("more than one site_no encountered, please just use one station ",
               "at a time and then rbind() the successive results on your own, ",
               "testing indicates some difficulty in setting appearsSystematic ",
               "as the algorithms rolls onto or off of a data frame with multiple ",
               "streamgages, it is safer and easier to check if this algorithm ",
               "works for all situations of gaps and code 7 this way")
+      return(NULL)
+   } else if(nu == 0) {
+      message("no rows of peaks to process")
       return(NULL)
    }
    site_for_messaging <- x$site_no[1]
