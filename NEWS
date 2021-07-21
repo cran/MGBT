@@ -1,6 +1,51 @@
 --------------------------------------------------------------------------------
 NEWS for R Package "MGBT"
 --------------------------------------------------------------------------------
+1.0.7 -- 2021-07-20
+1.  Added readNWISwatstore() as a means to download WATSTORE formatted peak
+      streamflows using a URL to USGS NWIS. The file is downloaded to a local
+      directory. Optionally, also a tab delimited version of the data can be
+      downloaded and here the dataRetrieval package is needed, and again 
+      optionally, the plotPeaks() function can be called for peak visualization.
+      The motivation for this function is to emplace a *.pkf, *.txt, and *.pdf
+      of the peak streamflow information into a directory (one streamgage only)
+      have the basic nomenclature of 08167000d/08167000.pdf
+                                               08167000.pkf
+                                               08167000.txt
+                                               CITATION.md
+      where 08167000 is a USGS streamgage identification number. Multiple 
+      streamgages can be processed, but each will get is own directory. This
+      structure is highly conducive to using PeakFQ software for flood-
+      frequency analysis.
+2.  Spelling corrections and addition of a See Also section in MGBT-package.Rd.
+3.  Minor changes of \url{} declarations to \doi{} declarations as per R CRAN
+      checks using R4.1. Evidently, CRAN policy now is to have dois shown as
+      "doi: 10.3133/sir20175038" style and not the style of
+      https://doi.org/10.3133/sir20175038. This does not seem to extend to
+      the DESCRIPTION at least for the doi of the package shown under URL:
+
+
+1.0.6 -- 2020-08-05
+1.  BUGGISH FIX: Switched to nmom=3 within plotFFQevol() because the function is
+      built around the Pearson type III, which only needs the first three 
+      L-moments. So by stopping the computation at nmom=3, we do not have to 
+      worry about the lmomco::are.lmom.valid() triggerng FALSE on the Tau3 and
+      Tau4 bounds, which in small samples can be violated. The change in the 
+      function keeps a cascade of errors from stacking up.
+
+
+1.0.5 -- 2020-06-04
+1.  BUG FIX: Deep testing with irregular use patterns found that the function
+      splitPeakCodes() was testing on water_year to trigger a call to
+      makeWaterYear() but the nomenclature of the package is "water_yr".
+2. DOC FIX: plotPeaks_batch() has a \donttest{} assertion using a named PDF
+      file. This now (R4.0.+) triggers note during --as-cran check. So the
+      example modified to use tempfile() instead.
+3. Color fix: It seems in R4.0.+ that colors 2,3,4 are not no longer limited
+     red, green, blue, respectively. These have been replaced as
+     "red", "green", and "blue" in plotPeaks.R/.Rd.
+
+
 1.0.4 -- 2020-03-23
 1.  Added more additional discussion of the lot argument within plotPeaks.Rd.
 2.  Minor improvement to messaging and "error" trapping with an empty data

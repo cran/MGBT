@@ -31,7 +31,7 @@ Asquith, W.H., Slade, R.M., and Judd, Linda, 1995, Analysis of low-outlier thres
 
 Asquith, W.H., and Slade, R.M., 1997, Regional equations for estimation of peak-streamflow frequency for natural basins in Texas: U.S. Geological Survey Water-Resources Investigations Report 96--4307, 68 p., \url{https://pubs.usgs.gov/wri/wri964307/}
 
-Asquith, W.H., and Roussel, M.C., 2009, Regression equations for estimation of annual peak-streamflow frequency for undeveloped watersheds in Texas using an L-moment-based, PRESS-minimized, residual-adjusted approach: U.S. Geological Survey Scientific Investigations Report 2009--5087, 48 p., \url{https://pubs.usgs.gov/sir/2009/5087}.
+Asquith, W.H., and Roussel, M.C., 2009, Regression equations for estimation of annual peak-streamflow frequency for undeveloped watersheds in Texas using an L-moment-based, PRESS-minimized, residual-adjusted approach: U.S. Geological Survey Scientific Investigations Report 2009--5087, 48 p., \url{https://pubs.usgs.gov/sir/2009/5087/}.
 
 Interagency Advisory Committee on Water Data (IACWD), 1982, Guidelines for determining flood flow frequency: Bulletin 17B of the Hydrology Subcommittee, Office of Water Data Coordination, U.S. Geological Survey, Reston, Va., 183 p.
 

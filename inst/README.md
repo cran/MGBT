@@ -8,14 +8,18 @@
 
 This README file provides original source context to the **MGBT** package and other package design notes. These are partial notes and the `man/MGBT-package.Rd` is contains much more information. The `./inst/` subdirectory is standard for _R_ packages. The `CITATION` file is standard for the _R_ language. The documentation below provides a manifest of sorts for the contents of this directory.
 
+# README (`./MGBT/inst/README.md)
+
+***
+***
 
 # DIRECTORY `./MGBT/inst/`
 
-**FILE:** `AsquithLOT(1995).pdf` --- A hard to find reference concerning low-outlier thresholds in Texas by the author.
+**FILE:** `AsquithLOT(1995).pdf` — A hard to find reference concerning low-outlier thresholds in Texas by the author.
 
-**FILE:** `tim-low-outliers-2010-notes.pdf` --- John F. England (JFE) visited Reston, Virginia (USGS Headquarters) in Spring 2017 after the passing of Timothy A. Cohn (TAC). He scanned Cohn's personal note books. One is titled "Tim Cohn Low Outliers" and contains 33 pages of mathematical notes. TAC, within `COHN_MGBT_LowOutliers(R).txt`, describes "Orthogonal evaluation of p-value" using "mathematical notes dated December 16, 2009" as spanning 39 pages and that these are "not for the faint of heart ;-)" This note is not found in the file `./sources/P3_089(R).txt`. It does not appear that the 33 pages scanned are the 39 pages being referenced.
+**FILE:** `tim-low-outliers-2010-notes.pdf` — John F. England (JFE) visited Reston, Virginia (USGS Headquarters) in Spring 2017 after the passing of Timothy A. Cohn (TAC). He scanned Cohn's personal note books. One is titled "Tim Cohn Low Outliers" and contains 33 pages of mathematical notes. TAC, within `COHN_MGBT_LowOutliers(R).txt`, describes "Orthogonal evaluation of p-value" using "mathematical notes dated December 16, 2009" as spanning 39 pages and that these are "not for the faint of heart ;-)" This note is not found in the file `./sources/P3_089(R).txt`. It does not appear that the 33 pages scanned are the 39 pages being referenced.
 
-**FILE:** `USGSapproval20190924.pdf` --- This is a copy of the approval email from USGS internal publication tracking authorizing dissemination (release) of the product.
+**FILE:** `USGSapproval20190924.pdf` — This is a copy of the approval email from USGS internal publication tracking authorizing dissemination (release) of the product.
 
 ## Subdirectory `./MGBT/inst/helpers/`
 
@@ -64,5 +68,5 @@ This directory is a holding ground for files to enrich the Internet presentation
 
 Nancy A. Barth has encountered a situation where USGS PeakFQ software and the **MGBT** package at first glance appear divergent from each other in regards to the threshold defined by the MGBT. For now (summer 2019), this paragraph just lists USGS streamflow-gaging station number(s) of such sites; further study is needed.
 
-* 06430898 for the period of record of 1989--2013
+* 06430898 for the period of record of 1989–2013
 

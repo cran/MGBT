@@ -22,7 +22,7 @@ makeWaterYear(x)
 \seealso{\code{\link{splitPeakCodes}}, \code{\link{plotPeaks}}
 }
 \references{
-U.S. Geological Survey, 2019, USGS water data for the Nation: U.S. Geological Survey National Water Information System database, accessed October 11, 2019, at \url{https://doi.org/10.5066/F7P55KJN}.
+U.S. Geological Survey, 2019, USGS water data for the Nation: U.S. Geological Survey National Water Information System database, accessed October 11, 2019, at \doi{10.5066/F7P55KJN}.
 }
 \examples{
 \donttest{

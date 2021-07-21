@@ -4,23 +4,40 @@ function(x, codes=TRUE, lot=NULL, site="",
             xlim.inflate=TRUE, ylim.inflate=TRUE, aux.y=NULL,
             log.ticks=c(1, 2, 3, 5, 8),
             show48=FALSE, showDubNA=FALSE, showGHyrs=TRUE, ...) {
+
   if(! exists("anyCodes", as.list(x))) x <- splitPeakCodes(x)
-  x$peak_va <- as.numeric(x$peak_va) # just incase--expectation is that
+  x$peak_va <- as.numeric(x$peak_va) # just in case--expectation is that
   # readNWISpeak is called with convertType=FALSE to more seemingless deal with dates
   x$gage_ht <- as.numeric(x$gage_ht)
+  x$gage_ht[is.na(x$gage_ht)] <- as.numeric(x$ag_gage_ht[is.na(x$gage_ht)])
+  # the above line is a last ditch effort figure out gage height record
+
   nwis_double_nullyrs <- x$water_yr[is.na(x$peak_va) &   is.na(x$gage_ht)]
   na_peak_gage_avail  <- x$water_yr[is.na(x$peak_va) & ! is.na(x$gage_ht)]
+
+  if(! exists("water_yr", as.list(x))) x <- makeWaterYear(x)
+
+  have_at_least_one_peak <- TRUE
   x <- x[! is.na(x$peak_va),]
-  if(! exists("water_yr", as.list(x))) x <- makeWaterYear( x)
-  xrng <- range(x$water_yr) # note x-range is not potential xlim until later
+  if(length(x[,1]) == 0) have_at_least_one_peak <- FALSE
+
+  if(have_at_least_one_peak) {
+    xrng <- suppressWarnings(range(x$water_yr)) # note x-range is not potential xlim until later
+    if(is.null(lot)) lot <- MGBT(x$peak_va)$LOThresh
+  } else {
+    xrng <- suppressWarnings(range(na_peak_gage_avail))
+  }
+
   gap <- xrng[1]:xrng[2]; #print(gap)
   gap <- sapply(gap, function(i) ifelse(length(x$water_yr[x$water_yr == i]) == 0,i,NA)); #print(gap)
   gap <- gap[! is.na(gap)]; #print(gap)
 
-  if(is.null(lot)) lot <- MGBT(x$peak_va)$LOThresh
   if(is.null(xlim)) xlim <- xrng
   if(  showGHyrs  ) xlim <- range(c(xlim, na_peak_gage_avail))
-  if(is.null(ylim)) ylim <- range(x$peak_va[x$peak_va > 0] )
+  if(is.null(ylim)) ylim <- suppressWarnings(range(x$peak_va[x$peak_va > 0]))
+  if(! is.finite(ylim[1])) {
+    ylim <- c(0.01, 0.1) # should only trigger have_at_least_one_peak == FALSE
+  }
   # This is a little nudger. What could happen without this is say a maximum
   # being exactly 50,000 cfs, which would place that data point on the top axis.
   # The ylim.inflate does not quite catch this otherwise. So the following 0.01
@@ -52,6 +69,7 @@ function(x, codes=TRUE, lot=NULL, site="",
   plot(x$water_yr[x$peak_va > 0], x$peak_va[x$peak_va > 0],
        type="n", log="y", xlim=xlim, ylim=ylim, xlab=xlab, ylab="",
        xaxs="i", yaxs="i", axes=FALSE, tcl=0.5, ...)
+
   if(showDubNA) {
     usry <- par()$usr[3:4]
     for(wy in nwis_double_nullyrs) {
@@ -60,7 +78,9 @@ function(x, codes=TRUE, lot=NULL, site="",
               col="#EDF8B1", lty=0)
     }
   }
-  polygon(xx,yy, col=grey(0.95), border=NA)
+  if(length(xx) == length(yy)) { # should only trigger have_at_least_one_peak == FALSE
+    polygon(xx,yy, col=grey(0.95), border=NA)
+  }
   lines(xx[1:2], rep(lot,2), lwd=0.5, lty=2)
   lmomco::add.log.axis(side=2,    tcl=+0.8*abs(par()$tcl), two.sided=TRUE)
   lmomco::add.log.axis(logs=c(1), tcl=+1.3*abs(par()$tcl), two.sided=TRUE, side=2)
@@ -103,13 +123,13 @@ function(x, codes=TRUE, lot=NULL, site="",
     lines(rep(wy,2), c(ylim[2],x$peak_va[x$water_yr == wy]), col="#FF3C00", lwd=0.81)
   }
   if(codes) {
-    with(x[x$isCodeC == TRUE,], points(water_yr, peak_va, pch="C", cex=1.3, col=4))
+    with(x[x$isCodeC == TRUE,], points(water_yr, peak_va, pch="C", cex=1.3, col="blue"))
     with(x[x$isCodeO == TRUE,], points(water_yr, peak_va, pch="O", cex=1.9, col="#FF8C00"))
     with(x[x$isCode3,], # and big letter D for dam
            points(water_yr, peak_va, pch="D", col="#377EB8", cex=2.5, lwd=0.8))
     if(show48) {
-      with(x[x$isCode4 == TRUE,], points(water_yr, peak_va, pch="4", cex=0.8, col=2))
-      with(x[x$isCode8 == TRUE,], points(water_yr, peak_va, pch="8", cex=0.8, col=2))
+      with(x[x$isCode4 == TRUE,], points(water_yr, peak_va, pch="4", cex=0.8, col="red"))
+      with(x[x$isCode8 == TRUE,], points(water_yr, peak_va, pch="8", cex=0.8, col="red"))
     } else {
       with(x[x$isCode4 == TRUE,], points(water_yr, peak_va, pch=16,  cex=0.7, lwd=0.8, col="#FF3C00"))
       with(x[x$isCode8 == TRUE,], points(water_yr, peak_va, pch=16,  cex=0.7, lwd=0.8, col="#FF3C00"))
@@ -118,7 +138,7 @@ function(x, codes=TRUE, lot=NULL, site="",
     with(x[x$isCode6 == TRUE,], points(water_yr, peak_va, pch="6", cex=0.8, col="#7D287D"))
     with(x[x$isCode7 == TRUE,], points(water_yr, peak_va, pch="7", cex=1.0, col=6))
   } else {
-    with(x[x$isCodeC == TRUE,], points(water_yr, peak_va, pch=3,   cex=1.1, lwd=0.8, col=4))
+    with(x[x$isCodeC == TRUE,], points(water_yr, peak_va, pch=3,   cex=1.1, lwd=0.8, col="blue"))
     with(x[x$isCode4 == TRUE,], points(water_yr, peak_va, pch=16,  cex=0.7, lwd=0.8, col="#FF3C00"))
     with(x[x$isCode5 == TRUE,], points(water_yr, peak_va, pch=2,   cex=0.7, lwd=0.8, col="#4B284B"))
     with(x[x$isCode6 == TRUE,], points(water_yr, peak_va, pch=1,   cex=0.7, lwd=0.8, col="#7D287D"))

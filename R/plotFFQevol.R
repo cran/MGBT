@@ -87,7 +87,8 @@ function(pkenv, lot=NULL, finalquas=NULL, log10offsets=NULL,
          next;
        }
        xlo <- lmomco::x2xlo(Q, leftout=lothres, a=0); #print(xlo); stop()
-       lmr <- lmomco::lmoms(log10(xlo$xin)); pe3lmr <- lmomco::parpe3(lmr)
+       lmr <- lmomco::lmoms(log10(xlo$xin), nmom=3) # we don't need more than
+       pe3lmr <- lmomco::parpe3(lmr) # three to fit the Pearson.
        ffq <- 10^lmomco::quape3(lmomco::f2flo(FF, pp=xlo$pp), pe3lmr)
        ffq002[j, 2] <- ffq[1]; ffq005[j, 2] <- ffq[2]; ffq010[j, 2] <- ffq[3]
        ffq025[j, 2] <- ffq[4]; ffq050[j, 2] <- ffq[5]; ffq100[j, 2] <- ffq[6]

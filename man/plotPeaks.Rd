@@ -3,9 +3,11 @@
 \alias{plotPeaks}
 \title{ Plot Peak Streamflows with Emphasis on Peak Discharge Qualification Codes }
 \description{
-Plot U.S. Geological Survey peak streamflows in \code{peak_va} and discharge qualifications codes in the \code{peak_cd} columns of a peak-streamflow data retrieval from the National Water Information System (NWIS) (U.S. Geological Survey, 2019). This code makes use of the \code{add.log.axis} function from the \pkg{lmomco} package, and because this is the only instance of this dependency, the \pkg{lmomco} package is treated as a suggested package and not as a dependency for the \pkg{MGBT} package. This function is used for the basis of the logarithmic plot within the \code{\link{plotFFQevol}} function.
+Plot U.S. Geological Survey peak streamflows in \code{peak_va} and discharge qualifications codes in the \code{peak_cd} columns of a peak-streamflow data retrieval from the National Water Information System (NWIS) (U.S. Geological Survey, 2019). This code makes use of the \code{add.log.axis} function from the \pkg{lmomco} package, and because this is the only instance of this dependency, the \pkg{lmomco} package is treated as a suggested package and not as a dependency for the \pkg{MGBT} package. The \code{add.log.axis} function also is used for the basis of the logarithmic plot within the \code{\link{plotFFQevol}} function.
 
 This function accommodates the plotting of various nuances of the peak including less than (code 4), greater than (code 8), zero peaks (plotted by a green tick on the horizontal axis), and peaks that are missing but the gage height was available (plotted by a light-blue tick on the horizontal axis if the \code{showGHyrs} argument is set). So-called code 5, 6, and 7 peaks are plotted by the numeric code as the plotting symbol, and so-called code C peaks are plotted by the letter \dQuote{C.} The very unusual circumstances of codes 3 and O are plotted by the letters \dQuote{D} (dam failure) and \dQuote{O} (opportunistic), respectively. These codes are are summarized within \code{\link{splitPeakCodes}}. The greater symbology set is described in the directory \code{MGBT/inst/legend} of the package sources.
+
+The logic herein also makes allowances for \dQuote{plotting} gage-height only streamgages but this requires that the \code{\link{splitPeakCodes}} function was called with the \code{all_peak_na_okay} set to \code{TRUE}. The gap analysis for gage-height only streamgages or streamgages for which the site changes from gage-height only to discharge and then back again or other permutations will likely result in the gap lines not being authoritative. The sub-bottom axis ticks for the gage-height only water years should always be plotting correctly.
 }
 \usage{
 plotPeaks(x, codes=TRUE, lot=NULL, site="",
@@ -37,7 +39,7 @@ plotPeaks(x, codes=TRUE, lot=NULL, site="",
 }
 \author{ W.H. Asquith}
 \references{
-U.S. Geological Survey, 2019, USGS water data for the Nation: U.S. Geological Survey National Water Information System database, accessed October 11, 2019, at \url{https://doi.org/10.5066/F7P55KJN}.
+U.S. Geological Survey, 2019, USGS water data for the Nation: U.S. Geological Survey National Water Information System database, accessed October 11, 2019, at \doi{10.5066/F7P55KJN}.
 }
 \seealso{\code{\link{makeWaterYear}}, \code{\link{splitPeakCodes}}, \code{\link{plotFFQevol}}
 }

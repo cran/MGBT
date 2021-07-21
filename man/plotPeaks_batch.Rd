@@ -22,7 +22,7 @@ plotPeaks_batch(sites, file=NA, do_plot=TRUE,
 }
 \author{ W.H. Asquith}
 \references{
-U.S. Geological Survey, 2019, USGS water data for the Nation: U.S. Geological Survey National Water Information System database, accessed October 11, 2019, at \url{https://doi.org/10.5066/F7P55KJN}.
+U.S. Geological Survey, 2019, USGS water data for the Nation: U.S. Geological Survey National Water Information System database, accessed October 11, 2019, at \doi{10.5066/F7P55KJN}.
 }
 \seealso{\code{\link{plotPeaks}}
 }
@@ -31,14 +31,14 @@ U.S. Geological Survey, 2019, USGS water data for the Nation: U.S. Geological Su
   # The dataRetrieval package is not required by MGBT algorithms, but needed
   # for the the plotPeaks_batch() function.
   sites <- c("07358570", "07358280", "07058980", "07258000")
-  PK <- plotPeaks_batch(sites, xlab="WATER YEAR",         lot=0, 
+  PK <- plotPeaks_batch(sites, xlab="WATER YEAR",         lot=0,
                                ylab="STREAMFLOW, IN CFS", file=NA) # }
 
 \donttest{
   # In this example, two calls to plotPeaks_batch() are made. The first is to use
-  # the function as a means to cache the retrieval of the peaks without the 
+  # the function as a means to cache the retrieval of the peaks without the
   # plotting overhead etc. The second is to actually perform the plotting.
-  pdffile <- "./peaks.pdf"
+  pdffile <- tempfile(pattern = "peaks", tmpdir = tempdir(), fileext = ".pdf")
   sites <- c("08106300", "08106310", "08106350", "08106500") # 08106350 no peaks
 
   PK <- plotPeaks_batch(sites, do_plot=FALSE)    # a hack to use its wrapper on

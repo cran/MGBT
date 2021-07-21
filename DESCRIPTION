@@ -1,10 +1,10 @@
 Package: MGBT
 Type: Package
 Title: Multiple Grubbs-Beck Low-Outlier Test
-Version: 1.0.4
+Version: 1.0.7
 Depends: R (>= 3.0.0)
 Suggests: dataRetrieval, lmomco
-Date: 2020-03-23
+Date: 2021-07-20
 Author: William H. Asquith [aut, cre], John F. England [aut, ctb], George R. Herrmann [ctb]
 Description: Compute the multiple Grubbs-Beck low-outlier test on positively distributed
  data and utilities for noninterpretive U.S. Geological Survey annual peak-streamflow
@@ -20,6 +20,6 @@ Copyright: This software is in the public domain because it contains
         https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits
 NeedsCompilation: no
 URL: https://doi.org/10.5066/P9CW9EF0
-Packaged: 2020-03-23 17:29:07 UTC; wasquith
+Packaged: 2021-07-21 17:56:43 UTC; wasquith
 Repository: CRAN
-Date/Publication: 2020-03-23 18:00:11 UTC
+Date/Publication: 2021-07-21 18:30:02 UTC

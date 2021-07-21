@@ -1,4 +1,4 @@
-"splitPeakCodes" <- function(x) {
+"splitPeakCodes" <- function(x, all_peaks_na_okay=FALSE) {
    if(! is.data.frame(x)) {
       warning("a data.frame as in 'dataRetrieval::readNWISpeak(station, convertType=FALSE)' required")
       return(NULL)
@@ -18,15 +18,18 @@
    }
    site_for_messaging <- x$site_no[1]
 
-   if(length(x$water_year) == 0) {
-     x <- makeWaterYear(x)
-   }
+   if(length(x$water_yr) == 0) x <- makeWaterYear(x)
+
    x$appearsSystematic <- TRUE
    x$appearsSystematic[is.na(x$peak_va)] <- FALSE
-   tmp <- x[! is.na(x$peak_va),]
-   if(length(tmp$peak_va) == 0) {
-     warning("no non NA peaks available for ",site_for_messaging,", returning NULL")
-     return(NULL)
+   if(all_peaks_na_okay) {
+     tmp <- x
+   } else {
+     tmp <- x[! is.na(x$peak_va),]
+     if(length(tmp$peak_va) == 0) {
+       warning("no non NA peaks available for ",site_for_messaging,", returning NULL")
+       return(NULL)
+     }
    }
    ix <- range(tmp$water_yr)[1]:range(tmp$water_yr)[2]
    gap <- sapply(ix, function(i) ifelse(length(tmp$water_yr[tmp$water_yr == i]) == 0,i,NA))

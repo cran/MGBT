@@ -7,9 +7,9 @@ bibentry(bibtype = "Manual",
   title = "MGBT---Multiple Grubbs-Beck Low-Outlier Test",
   organization = "U.S. Geological Survey",
   address="Reston, Va.",
-  year = "2020",
-  note = "R package version 1.0.4",
+  year = "2021",
+  note = "R package version 1.0.7",
   url = "https://code.usgs.gov/water/stats/MGBT",
   key = "MGBT-package",
-  textVersion = "Asquith, W.H., and England, J.F., with Herrmann, G.R., 2020, MGBT---Multiple Grubbs-Beck low-outlier test: U.S. Geological Survey software release, R package, Reston, Va., https://doi.org/10.5066/P9CW9EF0"
+  textVersion = "Asquith, W.H., and England, J.F., with Herrmann, G.R., 2021, MGBT---Multiple Grubbs-Beck low-outlier test: U.S. Geological Survey software release, R package, Reston, Va., https://doi.org/10.5066/P9CW9EF0"
 )
