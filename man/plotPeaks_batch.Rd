@@ -1,7 +1,7 @@
 \encoding{utf8}
 \name{plotPeaks_batch}
 \alias{plotPeaks_batch}
-\title{ Plot for More than One Streamgage that Peak Streamflows with Emphasis on Peak Discharge Qualification Codes }
+\title{Plot for More than One Streamgage that Peak Streamflows with Emphasis on Peak Discharge Qualification Codes}
 \description{
 Plot U.S. Geological Survey peak streamflows for multiple streamgages. This function is a wrapper on calls to \code{\link{plotPeaks}} with data retrieval occurring just ahead.
 }
@@ -20,21 +20,21 @@ plotPeaks_batch(sites, file=NA, do_plot=TRUE,
 \value{
   A list is returned by streamgage of the retrieved data with an attribute \code{empty_sites} storing those site numbers given for which no peaks were retrieved/processed. The data structure herein recognizes a \code{NA} for a site.
 }
-\author{ W.H. Asquith}
+\author{W.H. Asquith}
 \references{
 U.S. Geological Survey, 2019, USGS water data for the Nation: U.S. Geological Survey National Water Information System database, accessed October 11, 2019, at \doi{10.5066/F7P55KJN}.
 }
 \seealso{\code{\link{plotPeaks}}
 }
 \examples{
-\donttest{
+\dontrun{
   # The dataRetrieval package is not required by MGBT algorithms, but needed
   # for the the plotPeaks_batch() function.
   sites <- c("07358570", "07358280", "07058980", "07258000")
   PK <- plotPeaks_batch(sites, xlab="WATER YEAR",         lot=0,
                                ylab="STREAMFLOW, IN CFS", file=NA) # }
 
-\donttest{
+\dontrun{
   # In this example, two calls to plotPeaks_batch() are made. The first is to use
   # the function as a means to cache the retrieval of the peaks without the
   # plotting overhead etc. The second is to actually perform the plotting.

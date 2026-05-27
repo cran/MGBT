@@ -1,7 +1,7 @@
 \encoding{utf8}
 \name{CritK}
 \alias{CritK}
-\title{ Compute Critical Value of Grubbs--Beck statistic (eta) Given Probability }
+\title{Compute Critical Value of Grubbs--Beck statistic (eta) Given Probability }
 \description{
 Compute critical value for the Grubbs--Beck statistic (\code{eta} = \eqn{GB_r(p)}) given a probability (p-value), which is the \dQuote{pseudo-studentized} magnitude of \eqn{r}th smallest observation. The \code{CritK} function is the same as the \eqn{GB_r(p)} quantile function.  In distribution notation, this is equivalent to saying \eqn{GB_r(F)} for nonexceedance probability \eqn{F \in (0,1)}, and cumulative distribution function \eqn{F(GB_r)} is the value that comes from \code{\link{RthOrderPValueOrthoT}}.
 }

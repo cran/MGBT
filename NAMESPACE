@@ -1,5 +1,6 @@
-importFrom("stats", "dnorm", "integrate", "pnorm", "pt", "qbeta",
-                    "qnorm", "runif", "uniroot", "var")
+importFrom("stats", "aggregate", "dnorm", "integrate", "pnorm", "pt",
+                    "qbeta", "qnorm", "runif", "uniroot", "var")
+importFrom("stats", "complete.cases")
 importFrom("graphics", "plot", "points", "lines", "rug", "text")
 importFrom("graphics", "axTicks", "axis", "legend", "mtext", "par", "polygon")
 importFrom("grDevices", "grey", "dev.off", "pdf")
@@ -7,7 +8,7 @@ importFrom("utils", "write.table")
 #-----------------------------------------------
 # Following is not explicitly needed because Suggests: lmomco is used
 # and not Depends:
-#importFrom("lmomco", "add.log.axis", "f2flo", "lmoms",
+#importFrom("lmomco", "add.log.axis", "f2flo", "lmoms", "pp",
 #                     "parpe3", "quape3", "T2prob", "x2xlo")
 #-----------------------------------------------
 export(ASlo)
@@ -19,6 +20,7 @@ export(CritK)
 export(EMS)
 export(gtmoms)
 export(GGBK)
+export(jointPeaks)
 export(RthOrderPValueOrthoT)
 export(MGBT)
 export(MGBT17c)
@@ -32,8 +34,10 @@ export(RSlo)
 export(V)
 export(VMS)
 export(makeWaterYear)
+export(peakTMtoHRS)
 export(plotFFQevol)
 export(plotPeaks)
 export(plotPeaks_batch)
+export(ratioPeakMax1Day)
 export(readNWISwatstore)
 export(splitPeakCodes)

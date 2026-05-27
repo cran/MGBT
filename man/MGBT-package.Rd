@@ -47,7 +47,7 @@ Lamontagne, J.R., and Stedinger, J.R., 2015, Examination of the Spencer--McCuen 
 
 Lamontagne, J.R., Stedinger, J.R., Yu, Xin, Whealton, C.A., and Xu, Ziyao, 2016, Robust flood frequency analysis---Performance of EMA with multiple Grubbs--Beck outlier tests: Water Resources Research, v. 52, pp. 3068--3084.
 
-U.S. Geological Survey (USGS), 2018, PeakFQ---Flood frequency analysis based on Bulletin 17B and recommendations of the Advisory Committee on Water Information (ACWI) Subcommittee on Hydrology (SOH) Hydrologic Frequency Analysis Work Group (HFAWG), version 7.2: Accessed November 29, 2018, at \url{https://water.usgs.gov/software/PeakFQ/}.
+U.S. Geological Survey (USGS), 2018, PeakFQ---Flood frequency analysis based on Bulletin 17B and recommendations of the Advisory Committee on Water Information (ACWI) Subcommittee on Hydrology (SOH) Hydrologic Frequency Analysis Work Group (HFAWG), version 7.2: Accessed November 29, 2018, at \url{https://www.usgs.gov/tools/peakfq}.
 
 Veilleux, A.G., Cohn, T.A., Flynn, K.M., Mason, R.R., Jr., and Hummel, P.R., 2014, Estimating magnitude and frequency of floods using the PeakFQ 7.0 program: U.S. Geological Survey Fact Sheet 2013--3108, 2 p., \doi{10.3133/fs20133108}.
 }

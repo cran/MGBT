@@ -1,7 +1,7 @@
 \encoding{utf8}
 \name{EMS}
 \alias{EMS}
-\title{ Expected values of M and S }
+\title{Expected values of M and S}
 \description{
 Compute expected values of \eqn{M} and \eqn{S} given \eqn{q_\mathrm{min}} and define the quantity
 \deqn{z_r = \Phi^{(1)}(q_\mathrm{min})\mbox{,}}
@@ -22,7 +22,7 @@ EMS(n, r, qmin)
   The expected values of \eqn{M} and \eqn{S} in the form of an \R \code{vector}.
 }
 \note{
-TAC sources call on the explicit first index of \eqn{M} as literally \dQuote{\code{Em[1]}} for the returned vector, which seems unnecessary. This is a potential weak point in design because the \code{gtmoms} function is naturally vectorized and could potentially produce a vector of \eqn{M} values. For the implementation here, only the first value in \code{qmin} is used and a warning otherwise issued. Such coding prevents the return value from \code{EMS} accidentally acquiring a length greater than two. For at least samples of size \eqn{n=2}, overranging in a call to \code{lgamma(alpha)} happens for \code{alpha=0}. A \code{suppressWarnings()} is wrapped around the applicable line. The resulting \code{NaN} cascades up the chain, which will end up inside \code{\link{peta}}, but therein \code{SigmaMp} is not finite and a p-value of unity is returned.
+TAC sources call on the explicit first index of \eqn{M} as literally \dQuote{\code{Em[1]}} for the returned vector, which seems unnecessary. This is a potential weak point in design because the \code{gtmoms} function is naturally vectorized and could potentially produce a vector of \eqn{M} values. For the implementation here, only the first value in \code{qmin} is used and a warning otherwise issued. Such coding prevents the return value from \code{EMS} accidentally acquiring a length greater than two. For at least samples of size \eqn{n=2}, over-ranging in a call to \code{lgamma(alpha)} happens for \code{alpha=0}. A \code{suppressWarnings()} is wrapped around the applicable line. The resulting \code{NaN} cascades up the chain, which will end up inside \code{\link{peta}}, but therein \code{SigmaMp} is not finite and a p-value of unity is returned.
 }
 \source{
 \code{LowOutliers_jfe(R).txt}, \code{LowOutliers_wha(R).txt}, \code{P3_089(R).txt}---Named \code{EMS}
@@ -30,7 +30,7 @@ TAC sources call on the explicit first index of \eqn{M} as literally \dQuote{\co
 \references{
 Cohn, T.A., 2013--2016, Personal communication of original R source code: U.S. Geological Survey, Reston, Va.
 }
-\author{ W.H. Asquith consulting T.A. Cohn sources }
+\author{W.H. Asquith consulting T.A. Cohn sources}
 \seealso{\code{\link{CondMomsChi2}}, \code{\link{EMS}}, \code{\link{VMS}}, \code{\link{V}}, \code{\link{gtmoms}}
 }
 \examples{

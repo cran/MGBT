@@ -1,7 +1,7 @@
 \encoding{utf8}
 \name{peta}
 \alias{peta}
-\title{ Probability of Eta }
+\title{Probability of Eta}
 \description{
 Compute \code{peta}, which is the survival probability of the t-distribution for \code{eta =} \eqn{\eta}.
 

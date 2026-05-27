@@ -1,7 +1,7 @@
 \encoding{utf8}
 \name{RthOrderPValueOrthoT}
 \alias{RthOrderPValueOrthoT}
-\title{ P-value for the Rth Order Statistic }
+\title{P-value for the Rth Order Statistic}
 \description{
 Compute the p-value for the \eqn{r}th order statistic
 
@@ -40,7 +40,7 @@ Named \code{KthOrderPValueOrthoT} + \code{KthOrderPValueOrthoTb}
 \references{
 Cohn, T.A., 2013--2016, Personal communication of original R source code: U.S. Geological Survey, Reston, Va.
 }
-\author{ W.H. Asquith consulting T.A. Cohn sources }
+\author{W.H. Asquith consulting T.A. Cohn sources}
 \seealso{\code{\link{MGBT}}, \code{\link{CritK}}
 }
 \examples{

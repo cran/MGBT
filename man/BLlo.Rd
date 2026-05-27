@@ -1,7 +1,7 @@
 \encoding{utf8}
 \name{BLlo}
 \alias{BLlo}
-\title{ Barnett and Lewis Test Adjusted for Low Outliers }
+\title{Barnett and Lewis Test Adjusted for Low Outliers }
 \description{
 The Barnett and Lewis (1995, p. 224; \eqn{T_{\mathrm{N}3}}) so-labeled \dQuote{N3 method} with TAC adjustment to look for low outliers. The essence of the method, given the order statistics \eqn{x_{[1:n]} \le x_{[2:n]} \le \cdots \le x_{[(n-1):n]} \le x_{[n:n]}}, is the statistic
 \deqn{BL_r = T_{\mathrm{N}3} =

@@ -27,7 +27,8 @@
    } else {
      tmp <- x[! is.na(x$peak_va),]
      if(length(tmp$peak_va) == 0) {
-       warning("no non NA peaks available for ",site_for_messaging,", returning NULL")
+       message("no non NA peaks available for ", site_for_messaging, ", returning NULL\n",
+               "user might be interested instead of using all_peaks_na_okay=TRUE argument")
        return(NULL)
      }
    }
@@ -42,15 +43,17 @@
    x$isCode9 <- x$isCode8 <- x$isCode7 <-
    x$isCode6 <- x$isCode5 <- x$isCode4 <-
    x$isCode3 <- x$isCode2 <- x$isCode1 <- FALSE
-   x$isCode9 <- x$isCode8 <- x$isCode7 <-
-   x$isCodeO <- x$isCodeE <- x$isCodeD <- x$isCodeC <-
    x$isCodeB <- x$isCodeA <- FALSE
+   x$isCodeE <- x$isCodeD <- x$isCodeC <- FALSE
+   x$isCodeR <- x$isCodeO <- x$isCodeF <- FALSE
    x$isCodeA[grep("A", x$peak_cd)] <- TRUE
    x$isCodeB[grep("B", x$peak_cd)] <- TRUE
    x$isCodeC[grep("C", x$peak_cd)] <- TRUE
    x$isCodeD[grep("D", x$peak_cd)] <- TRUE
    x$isCodeE[grep("E", x$peak_cd)] <- TRUE
+   x$isCodeF[grep("F", x$peak_cd)] <- TRUE
    x$isCodeO[grep("O", x$peak_cd)] <- TRUE
+   x$isCodeR[grep("R", x$peak_cd)] <- TRUE
    x$isCode1[grep("1", x$peak_cd)] <- TRUE
    x$isCode2[grep("2", x$peak_cd)] <- TRUE
    x$isCode3[grep("3", x$peak_cd)] <- TRUE
@@ -60,7 +63,7 @@
    x$isCode7[grep("7", x$peak_cd)] <- TRUE
    x$isCode8[grep("8", x$peak_cd)] <- TRUE
    x$isCode9[grep("9", x$peak_cd)] <- TRUE
-   x$anyCodes[grep("A|B|C|D|E|O|1|2|3|4|5|6|7|8|9", x$peak_cd)] <- TRUE
+   x$anyCodes[grep("A|B|C|D|O|1|2|3|4|5|6|7|8|9", x$peak_cd)] <- TRUE
    x$anyCodes[is.na(x$anyCodes)]  <- FALSE
    x$appearsSystematic[x$isCodeO] <- FALSE
    for(seven in c(x$water_yr[x$isCode7], max(x$water_yr))) {

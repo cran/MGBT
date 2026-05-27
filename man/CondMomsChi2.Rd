@@ -1,7 +1,7 @@
 \encoding{utf8}
 \name{CondMomsChi2}
 \alias{CondMomsChi2}
-\title{ Conditional Moments: N.B. Moments employ only observations above Xsi }
+\title{Conditional Moments: N.B. Moments employ only observations above Xsi }
 \description{
 Compute the \eqn{\chi^2}-conditional moments (Chi-squared distributed moments) based on only those (\eqn{n} \eqn{-} \eqn{r}) observations above a threshold \eqn{X_{si}} for a sample size of \eqn{n} and \eqn{r} number of truncated observations. The first moment is \code{(gtmoms(xsi,2) -} \code{gtmoms(xsi,1)^2)} that is in the first returned column. The second moment (variance of S-squared) is \code{V(n,r,pnorm(xsi))[2,2]} that is in the second returned column. Further mathematical details are available under functions \code{\link{gtmoms}} and \code{\link{V}}.
 }

@@ -1,7 +1,7 @@
 \encoding{utf8}
 \name{CondMomsZ}
 \alias{CondMomsZ}
-\title{ Conditional Moments: N.B. Moments employ only observations above Xsi }
+\title{Conditional Moments: N.B. Moments employ only observations above Xsi }
 \description{
 Compute the \eqn{Z}-conditional moments (standard normal distributed moments) based on only those (\eqn{n} \eqn{-} \eqn{r}) observations above a threshold \eqn{X_{si}} for a sample size of \eqn{n} and \eqn{r} number of truncated observations. The first moment is \code{gtmoms(xsi,1)}, which is in the first returned column. The second moment is
 \preformatted{
@@ -28,7 +28,7 @@ The \code{CondMomsZ} function appears to not be used for any purpose. Only the \
 \references{
 Cohn, T.A., 2013--2016, Personal communication of original R source code: U.S. Geological Survey, Reston, Va.
 }
-\author{ W.H. Asquith consulting T.A. Cohn sources }
+\author{W.H. Asquith consulting T.A. Cohn sources}
 \seealso{\code{\link{CondMomsChi2}}, \code{\link{gtmoms}}
 }
 \examples{

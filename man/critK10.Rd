@@ -1,7 +1,7 @@
 \encoding{utf8}
 \name{critK10}
 \alias{critK10}
-\title{ Single Grubbs--Beck Critical Values for 10-percent Test as used in Bulletin 17B }
+\title{Single Grubbs--Beck Critical Values for 10-percent Test as used in Bulletin 17B }
 \description{
 Return the critical values at the 10-percent (\eqn{\alpha_\mathrm{17B} = 0.10}) significance level for the single Grubbs--Beck test as in Bulletin 17B (IACWD, 1982).
 }
@@ -25,7 +25,7 @@ Cohn, T.A., 2013--2016, Personal communication of original R source code: U.S. G
 
 Interagency Advisory Committee on Water Data (IACWD), 1982, Guidelines for determining flood flow frequency: Bulletin 17B of the Hydrology Subcommittee, Office of Water Data Coordination, U.S. Geological Survey, Reston, Va., 183 p.
 }
-\author{ W.H. Asquith consulting T.A. Cohn sources }
+\author{W.H. Asquith consulting T.A. Cohn sources}
 \seealso{\code{\link{CritK}}
 }
 \examples{

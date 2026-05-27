@@ -1,7 +1,7 @@
 \encoding{utf8}
 \name{VMS}
 \alias{VMS}
-\title{  Covariance matrix of M and S }
+\title{Covariance matrix of M and S}
 \description{
 Compute the covariance matrix of \eqn{M} and \eqn{S} given \eqn{q_\mathrm{min}}.  Define the vector of four moment expectations
 \deqn{E_{i\in 1,2} = \Psi\bigl(\Phi^{(-1)}(q_\mathrm{min}), i\bigr)\mbox{,}}
@@ -30,7 +30,7 @@ Because the \code{gtmoms} function is naturally vectorized and TAC sources provi
 \references{
 Cohn, T.A., 2013--2016, Personal communication of original R source code: U.S. Geological Survey, Reston, Va.
 }
-\author{ W.H. Asquith consulting T.A. Cohn sources }
+\author{W.H. Asquith consulting T.A. Cohn sources}
 \seealso{\code{\link{EMS}}, \code{\link{V}}, \code{\link{gtmoms}}
 }
 \examples{

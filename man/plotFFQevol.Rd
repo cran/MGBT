@@ -1,7 +1,7 @@
 \encoding{utf8}
 \name{plotFFQevol}
 \alias{plotFFQevol}
-\title{ Plot Flood-Frequency in Time }
+\title{Plot Flood-Frequency in Time}
 \description{
 Plot the temporal evolution of peak-streamflow frequency using the method of L-moments on the systematic record, assuming that \code{appearsSystematic} fully identifies the systematic record (see \code{\link{splitPeakCodes}}), but have the results align on the far right side to other results. These other results are intended to be an official best estimate of the peak-streamflow frequency using all available information and are generally anticipated to be from Bulletin 17C (B17C) (England and others, 2018). The motivation for this function is that some have contacted one of the authors with a desire to show a temporal evolution of the estimates of the 2-, 10-, 100-, and 500-year peak-streamflow values but simultaneously have \dQuote{current} (presumably a modern year [not necessarily the last year of record]) results. A target year (called the \code{final_water_yr}) is declared. Base10 logarithmic offsets from the so-called final quantile values at that year are computed. These then are used additively to correct the temporal evolution of the L-moment based peak-streamflow frequency values.
 
@@ -21,15 +21,15 @@ plotFFQevol(pkenv, lot=NULL, finalquas=NULL, log10offsets=NULL,
   \item{lot}{A vector of low-outlier thresholds for the stations stored in \code{pkenv};}
   \item{finalquas}{A \code{data.frame} (see \bold{Examples}) of the final peak-streamflow frequency values to be soon (matched!) at the right side of the plot. These values could stem from B17C-like analyses using all the features therein. These values force, through an offsetting method in log10-space, the method of L-moment results in time to \dQuote{land} to the results at the end (right side).}
   \item{log10offsets}{An optional offset \code{data.frame} (see \bold{Examples}) to add to \code{finalquas} so that the final right side method of L-moment results match the results given in \code{finalquas};}
-  \item{minyrs}{The minimum number of years (sample size) before trying to fit a log-Pearson type III distribution by method of L-moments---the \code{lot} will be honored through a conditional distribution trunction;}
-  \item{byr}{The beginning year for which to even start consultion for peaks in time frequency analysis;}
+  \item{minyrs}{The minimum number of years (sample size) before trying to fit a log-Pearson type III distribution by method of L-moments---the \code{lot} will be honored through a conditional distribution truncation;}
+  \item{byr}{The beginning year for which to even start consultation for peaks in time frequency analysis;}
   \item{edgeyrs}{The optional bounding years for the horizontal axis but potentially enlarged by the data as well as the setting of \code{usewyall};}
-  \item{logyaxs}{A logical to trigger a logarithmic plot. The logarithmic plot is based on the function \code{\link{plotPeaks}} and is more sophisticated. The linear option is provided herein as some users have deemed logarthimic axes too complicated for engineers to understand (seriously);}
+  \item{logyaxs}{A logical to trigger a logarithmic plot. The logarithmic plot is based on the function \code{\link{plotPeaks}} and is more sophisticated. The linear option is provided herein as some users have deemed logarithmic axes too complicated for engineers to understand (seriously);}
   \item{lego}{The year at which to start the legend;}
   \item{maxs}{The upper limit of the vertical axis;}
   \item{mins}{The lower limit of the vertical axis;}
   \item{names}{An optional character string vector to be used as a plot title;}
-  \item{auxeyr}{An optional auxillary ending year to superceed the \code{final_water_yr} from the \code{finalquas}. The \code{auxeyr} could lead to interesting conflict in the graphic. For example, a 500-year value being less than the 100-year. If a distribution swings between sign of the skew parameter and because the offsets are computed at a the discrete point in time (\code{final_water_yr}), then the offset could be too large at the 500-yr level and cause overlap (see \bold{Examples});}
+  \item{auxeyr}{An optional auxiliary ending year to superceed the \code{final_water_yr} from the \code{finalquas}. The \code{auxeyr} could lead to interesting conflict in the graphic. For example, a 500-year value being less than the 100-year. If a distribution swings between sign of the skew parameter and because the offsets are computed at a the discrete point in time (\code{final_water_yr}), then the offset could be too large at the 500-yr level and cause overlap (see \bold{Examples});}
   \item{xlab}{An optional x-label of the plot;}
   \item{ylab}{An optional y-label of the plot;}
   \item{title}{An optional super title for the plot to be shown above \code{names};}
@@ -44,17 +44,17 @@ plotFFQevol(pkenv, lot=NULL, finalquas=NULL, log10offsets=NULL,
 \value{
   The log10-offset values are returned if not given otherwise this function is used for its graphical side effects.
 }
-\author{ W.H. Asquith}
+\author{W.H. Asquith}
 \source{
 Earlier code developed by W.H. Asquith in about 2016.
 }
 \references{
-England, J.F., Cohn, T.A., Faber, B.A., Stedinger, J.R., Thomas Jr., W.O., Veilleux, A.G., Kiang, J.E., and Mason, R.R., 2018, Guidelines for determining flood flow frequency Bulletin 17C: U.S. Geological Survey Techniques and Methods, book 4, chap. 5.B, 148 p., \url{https://pubs.er.usgs.gov/publication/tm4B5}
+England, J.F., Cohn, T.A., Faber, B.A., Stedinger, J.R., Thomas Jr., W.O., Veilleux, A.G., Kiang, J.E., and Mason, R.R., 2018, Guidelines for determining flood flow frequency Bulletin 17C: U.S. Geological Survey Techniques and Methods, book 4, chap. 5.B, 148 p., \doi{10.3133/tm4B5}.
 }
 \seealso{\code{\link{plotPeaks}}
 }
 \examples{
-\donttest{
+\dontrun{
 # The dataRetrieval package is not required by MGBT algorithms.
 opts <- options(scipen=7)
 opar <- par(no.readonly=TRUE)

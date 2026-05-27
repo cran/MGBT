@@ -1,7 +1,7 @@
 \encoding{utf8}
 \name{RSlo}
 \alias{RSlo}
-\title{ Rosner RST Test Adjusted for Low Outliers }
+\title{Rosner RST Test Adjusted for Low Outliers}
 \description{
 The Rosner (1975) method or the essence of the method, given the order statistics \eqn{x_{[1:n]} \le x_{[2:n]} \le \cdots \le x_{[(n-1):n]} \le x_{[n:n]}}, is the statistic:
 \deqn{RS_r =

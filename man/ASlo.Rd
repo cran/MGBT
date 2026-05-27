@@ -1,7 +1,7 @@
 \encoding{utf8}
 \name{ASlo}
 \alias{ASlo}
-\title{ Regression of a Heuristic Method for Identification of Low Outliers in Texas Annual Peak Streamflow }
+\title{Regression of a Heuristic Method for Identification of Low Outliers in Texas Annual Peak Streamflow }
 \description{
 Asquith and others (1995) developed a regression equation based on the first three moments of non-low-outlier truncated annual peak streamflow data in an effort to semi-objectively compute low-outlier thresholds for log-Pearson type III (Bulletin 17B consistent; IACWD, 1982) analyses (Asquith and Slade, 1997). A career hydrologist in for USGS in Texas, Raymond M. Slade, Jr., was particularly emphatic that aggressive low-outlier identification is needed for Texas hydrology as protection from mixed population effects.
 
@@ -17,7 +17,7 @@ The \eqn{AS_{\mathrm{Texas}}} equation was repeated in a footnote in Asquith and
 ASlo(mu, sigma, gamma)
 }
 \arguments{
-  \item{mu}{The arthimetic mean of the logarithms of non-low-outlier truncated annual peak streamflow data (zeros removed);}
+  \item{mu}{The arithmetic mean of the logarithms of non-low-outlier truncated annual peak streamflow data (zeros removed);}
   \item{sigma}{The standard deviation of the logarithms of non-low-outlier truncated annual peak streamflow data (zeros removed); and}
   \item{gamma}{The skewness (product moment) of the logarithms of non-low-outlier truncated annual peak streamflow data (zeros removed).}
 }

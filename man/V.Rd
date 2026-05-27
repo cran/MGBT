@@ -1,7 +1,7 @@
 \encoding{utf8}
 \name{V}
 \alias{V}
-\title{  Covariance matrix of M and S-squared }
+\title{Covariance matrix of M and S-squared}
 \description{
 Compute the covariance matrix of \eqn{M} and \eqn{S^2} (S-squared) given \eqn{q_\mathrm{min}}. Define the vector of four moment expectations
 \deqn{E_{i\in 1,2,3,4} = \Psi\bigl(\Phi^{(-1)}(q_\mathrm{min}), i\bigr)\mbox{,}}
@@ -37,7 +37,7 @@ Because the \code{\link{gtmoms}} function is naturally vectorized and TAC source
 \references{
 Cohn, T.A., 2013--2016, Personal communication of original R source code: U.S. Geological Survey, Reston, Va.
 }
-\author{ W.H. Asquith consulting T.A. Cohn sources }
+\author{W.H. Asquith consulting T.A. Cohn sources}
 \seealso{\code{\link{EMS}}, \code{\link{VMS}}, \code{\link{gtmoms}}
 }
 \examples{

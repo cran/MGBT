@@ -1,7 +1,7 @@
 \encoding{utf8}
 \name{GGBK}
 \alias{GGBK}
-\title{ Cohn Approximation for New Generalized Grubbs--Beck Critical Values for 10-Percent Test }
+\title{Cohn Approximation for New Generalized Grubbs--Beck Critical Values for 10-Percent Test }
 \description{
 Compute Cohn's approximation of critical values at the 10-percent significance level for the new generalized Grubbs--Beck test.
 }

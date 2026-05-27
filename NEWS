@@ -1,11 +1,113 @@
 --------------------------------------------------------------------------------
-NEWS for R Package "MGBT"
+                          NEWS for R Package "MGBT"
 --------------------------------------------------------------------------------
-1.0.7 -- 2021-07-20
-1.  Added readNWISwatstore() as a means to download WATSTORE formatted peak
+Changes in version 1.1.5 (2026-05-21)
+-  Change to DESCRIPTION to convert to new style of author identification.
+-  Changes in outdated urls or urls not providing reasonable reply times
+     relative to CRAN checks in gtmoms.Rd, MGBT.Rd, peakTIMtoHRS.Rd,
+     plotFFQevol.Rd, readNWISwatstore.Rd, and splitPeakCodes.Rd. Obviously, the
+     fixes on the urls made in v1.1.4 were not ideal.
+-  Minor spelling corrections made in ASlo.Rd, EMS.Rd, gtmoms.Rd,
+     plotFFQevol.Rd, plotPeaks.Rd, and ratioPeakMax1Day.Rd.
+
+
+Changes in version 1.1.4 (2025-03-17)
+-  Added peakTMtoHRS() for conversion of peak times to decimal hours and
+      optional computation of circular mean and standard deviations.
+-  Fixed url redirection to PeakFQ software homepage in gtmoms.Rd,
+      MGBT-package.Rd, MGBT.Rd, and readNWISwaterstore.Rd.
+
+
+Changes in version 1.1.3 (2024-10-21)
+-  Grammar edit in readNWISwaterstore.Rd.
+-  Added ratioPeakMax1Day().
+-  Added inst/helpers/pkdvrat as a CONUS demo on the repo by not in R build.
+-  Bug fix on jointPeaks(), in process of deletion of data.frame attributes
+      from dataRetrieval pull, logical variable columns from splitPeakCodes()
+      in an as.data.frame(as.matrix()) operation post splitPeakCodes() was
+      converted the logicals to character columns. Added error traps on nrow()
+      being zero "after" the two peak tables have been joined.
+
+
+Changes in version 1.1.2 (2024-01-23)
+-  Maintenance on the repository and code.json to catch up with appropriate
+      structure.
+-  Removed spurious leading spaces in several of the Rd macros across most of
+      the Rd files in the package.
+-  Added jointPeaks() for retrieving peaks from dataRetrieval with splitting the
+      peak codes by splitPeakCodes() for two streamgages. Then, the retrieved
+      data frames are merged into the union as the "joint peak data frame" that
+      should be useful in bivariate probability study, which is outside the
+      scope of this package. However, a demonstration is provided within the
+      copBasic package and specifically the copBasic::breveCOP.Rd Examples.
+
+
+Changes in version 1.1.1 (2023-01-23)
+-  Added more messaging about all_peaks_na_okay argument to splitPeakCodes()
+      when the function is returning NULL. The user might forget that one can
+      switch the behavior of the function and this could be very useful when
+      a user has a gage-height only streamgage and particularly so if such
+      site(s) are containing in a large list of streamgages. Worked with
+      Dan Wagner (USGS) in testing the changes.
+-  Added argument make_text_for_all_na_peaks=TRUE to plotPeaks() so that the
+      function while plotting a gage-height only site example, inserts the
+      sentence "There are no non-missing peaks for this streamgage." This will
+      assist many users who have a mixture of flow streamgages with the
+      less common (almost rare) gage-height only streamgages. Worked with
+      Dan Wagner (USGS) in testing the changes.
+-  Added all_peaks_na_okay=TRUE argument to readNWISwatstore() so that it can
+      dispatch this argument of the same name to splitPeakCodes(). The deafult
+      is different between the two functions because readNWISwatstore() in
+      particular is expected to operate on large numbers of site numbers as
+      part of setting up a regional study. Worked with Dan Wagner (USGS) in
+      testing the changes.
+-  Trapped error in code 4 and code 8 plotting in plotPeaks() when the table
+      of peaks had duplicated or more water years, which should not happen
+      by definition. A warning with explanation is triggered and the repeated
+      water years are plotted. The error was a
+      'Error in xy.coords(x, y) : 'x' and 'y' lengths differ'. At the time of
+      testing USGS streamgage 02317600 was the offender.
+-  Added warning to makeWaterYear() to issue warnings for each water year that
+      occurs more than once in the character vector or in the data frame.
+-  Added return.progress=FALSE to readNWISwatstore() that can be used to
+      return a data.frame of siteNumbers column and column vector of TRUE and
+      FALSE values whether the peaks were returned. This is useful for
+      situations in which a site has no peak records at all in NWIS.
+-  Added mtext.site=TRUE to plotPeaks() so as to disable the call of
+      mtext(site, line=0.5) therein but to still have a site being passed
+      into the plotPeaks() function. This provides then a seed for warning()
+      messaging in the event that one or more water years are duplicated,
+      which is not possible by design for a compliant annual peak series.
+
+
+Changes in version 1.0.8 (2021-09-11)
+-  Removed unneeded operation involving peak_va within makeWaterYear().
+-  Extended makeWaterYear() to also use character vector for parsing.
+-  BUG FIX: makeWaterYear() was returning zeros in the month_va and day_va
+      columns when the USGS was reporting "00" for the missing month or day.
+      The zeros are now set to missing (NA) values.
+-  Extended splitPeakCodes() to the newer code F and code R attributes and
+      extended the documentation splitPeakCodes.Rd for more citations and
+      further structured listings of both peak_cd and gage_height_cd. Also,
+      removed the code E from triggering the setting of the anyCodes column
+      on the returned table. The documentation clarifies now why E, F, and R
+      are not used to set records of the anyCodes column as TRUE. Colleague
+      Daniel Wagner is credited for discovering that code R has been added to
+      USGS NWIS and necessitate revision to MGBT::splitPeakCodes().
+-  Copied the inst/legend/legend_camera.pdf to
+               man/figures/plotPeaks_legend.jpg (72dpi)   and
+               man/figures/plotPeaks_legend.pdf
+      and then extended the documentation of plotPeaks.Rd to insert these two
+      figures as needed in the html help within an R session and also for the
+      PDF of the user manual. This will help users access the legend itself.
+
+
+Changes in version 1.0.7 (2021-07-20)
+-  On CRAN
+-  Added readNWISwatstore() as a means to download WATSTORE formatted peak
       streamflows using a URL to USGS NWIS. The file is downloaded to a local
       directory. Optionally, also a tab delimited version of the data can be
-      downloaded and here the dataRetrieval package is needed, and again 
+      downloaded and here the dataRetrieval package is needed, and again
       optionally, the plotPeaks() function can be called for peak visualization.
       The motivation for this function is to emplace a *.pkf, *.txt, and *.pdf
       of the peak streamflow information into a directory (one streamgage only)
@@ -13,178 +115,167 @@ NEWS for R Package "MGBT"
                                                08167000.pkf
                                                08167000.txt
                                                CITATION.md
-      where 08167000 is a USGS streamgage identification number. Multiple 
+      where 08167000 is a USGS streamgage identification number. Multiple
       streamgages can be processed, but each will get is own directory. This
       structure is highly conducive to using PeakFQ software for flood-
       frequency analysis.
-2.  Spelling corrections and addition of a See Also section in MGBT-package.Rd.
-3.  Minor changes of \url{} declarations to \doi{} declarations as per R CRAN
+-  Spelling corrections and addition of a See Also section in MGBT-package.Rd.
+-  Minor changes of \url{} declarations to \doi{} declarations as per R CRAN
       checks using R4.1. Evidently, CRAN policy now is to have dois shown as
       "doi: 10.3133/sir20175038" style and not the style of
       https://doi.org/10.3133/sir20175038. This does not seem to extend to
       the DESCRIPTION at least for the doi of the package shown under URL:
 
 
-1.0.6 -- 2020-08-05
-1.  BUGGISH FIX: Switched to nmom=3 within plotFFQevol() because the function is
-      built around the Pearson type III, which only needs the first three 
-      L-moments. So by stopping the computation at nmom=3, we do not have to 
-      worry about the lmomco::are.lmom.valid() triggerng FALSE on the Tau3 and
-      Tau4 bounds, which in small samples can be violated. The change in the 
+Changes in version 1.0.6 (2020-08-05)
+-  On CRAN
+-  BUGGISH FIX: Switched to nmom=3 within plotFFQevol() because the function is
+      built around the Pearson type III, which only needs the first three
+      L-moments. So by stopping the computation at nmom=3, we do not have to
+      worry about the lmomco::are.lmom.valid() triggering FALSE on the Tau3 and
+      Tau4 bounds, which in small samples can be violated. The change in the
       function keeps a cascade of errors from stacking up.
 
 
-1.0.5 -- 2020-06-04
-1.  BUG FIX: Deep testing with irregular use patterns found that the function
+Changes in version 1.0.5 (2020-06-04)
+-  BUG FIX: Deep testing with irregular use patterns found that the function
       splitPeakCodes() was testing on water_year to trigger a call to
       makeWaterYear() but the nomenclature of the package is "water_yr".
-2. DOC FIX: plotPeaks_batch() has a \donttest{} assertion using a named PDF
+-  DOC FIX: plotPeaks_batch() has a \donttest{} assertion using a named PDF
       file. This now (R4.0.+) triggers note during --as-cran check. So the
       example modified to use tempfile() instead.
-3. Color fix: It seems in R4.0.+ that colors 2,3,4 are not no longer limited
+-  Color fix: It seems in R4.0.+ that colors 2,3,4 are not no longer limited
      red, green, blue, respectively. These have been replaced as
      "red", "green", and "blue" in plotPeaks.R/.Rd.
 
 
-1.0.4 -- 2020-03-23
-1.  Added more additional discussion of the lot argument within plotPeaks.Rd.
-2.  Minor improvement to messaging and "error" trapping with an empty data
-      frame passed to splitPeakCodes() and switched from warning() to 
+Changes in version 1.0.4 (2020-03-23)
+-  Added more additional discussion of the lot argument within plotPeaks.Rd.
+-  Minor improvement to messaging and "error" trapping with an empty data
+      frame passed to splitPeakCodes() and switched from warning() to
       message() for the case when more than one streamgage exists on the data
       frame, which is a situation never supported by anyway in prior releases.
-3.  Added the plotPeaks_batch() as a wrapper on plotPeaks() for multiple
+-  Added the plotPeaks_batch() as a wrapper on plotPeaks() for multiple
       streamgage processing.
 
 
-1.0.3 -- 2019-11-26 (Documentation updating)
-1.  Added the ./inst/INSTALL_HELP.md to detail use of RStudio on Windows for
+Changes in version 1.0.3 (2019-11-26)
+-  Documentation updating
+-  Added the ./inst/INSTALL_HELP.md to detail use of RStudio on Windows for
       package installation from sources.
-2.  Additional tune up of several README.md.
+-  Additional tune up of several README.md.
 
 
-1.0.2 -- 2019-10-11 (2nd CRAN Presubmission Review Reconciliations)
-1.  The CRAN team provided additional critique requiring GGBK.R to be modified
+Changes in version 1.0.2 (2019-10-11)
+-  On CRAN
+-  2nd CRAN Presubmission Review Reconciliations
+-  The CRAN team provided additional critique requiring GGBK.R to be modified
       to issue a stop() instead of warning();return(NULL). The GGBK.Rd example
       was not modified to a \donttest{} from \dontrun{} as per CRAN advice because
       the stop() would cause "R CMD check --as-cran --run-donttest" to FAIL.
-2.  Converted \dontrun{} to \donttest{} in CritK.Rd.
-3.  Converted \dontrun{} to \donttest{} in RthOrderPValueOrthoT.Rd.
+-  Converted \dontrun{} to \donttest{} in CritK.Rd.
+-  Converted \dontrun{} to \donttest{} in RthOrderPValueOrthoT.Rd.
       Some modification to arguments in the Examples made to keep reasonable
       run times when --run-donttest is used. Notes were made to TAC's original
       settings in these examples where needed.
-4.  Converted \dontrun{} to \donttest{} in RSlo.Rd, but slight modification
+-  Converted \dontrun{} to \donttest{} in RSlo.Rd, but slight modification
       to the used r-order statistics. Sample size kept at n=100, but the maximum
       order statistic in is maxr=n/10 instead of n/2, which was the entire lower
       tail. This is done so that forced testing of the example can still be
       reasonably completed when --run-donttest is used. Notes were made to TAC's
       original settings in the example.
-5.  Converted \dontrun{} to \donttest{} in critK10.Rd. However, one \dontrun{}
+-  Converted \dontrun{} to \donttest{} in critK10.Rd. However, one \dontrun{}
       is deliberately retained because the original example uses the GGBK(),
       which now issues a stop().
-6.  Converted \dontrun{} to \donttest{} in makeWaterYear.Rd, plotFFQevol.Rd,
+-  Converted \dontrun{} to \donttest{} in makeWaterYear.Rd, plotFFQevol.Rd,
       plotPeaks.Rd, and splitPeakCodes.Rd.
-7.  Added dataRetrieval to the DESCRIPTION:Suggests. 
-8.  Added USGS NWIS citation to makeWaterYear.Rd, plotPeaks.Rd, and
+-  Added dataRetrieval to the DESCRIPTION:Suggests.
+-  Added USGS NWIS citation to makeWaterYear.Rd, plotPeaks.Rd, and
       splitPeakCodes.Rd.
-9.  Reversed the ordering of this NEWS.
+-  Reversed the ordering of this NEWS.
 
 
-1.0.1 -- 2019-10-01 (1st CRAN Presubmission Review Reconciliations)
-1.  Added two references and DOI numbers to the DESCRIPTION:Description.
-2.  Opened up EMS.Rd to the running of its examples.
-3.  Added note about very long run times for some of the \dontrun{} remaining for
+Changes in version 1.0.1 (2019-10-01)
+-  1st CRAN Presubmission Review Reconciliations
+-  Added two references and DOI numbers to the DESCRIPTION:Description.
+-  Opened up EMS.Rd to the running of its examples.
+-  Added note about very long run times for some of the \dontrun{} remaining for
       RSlo.Rd and RthOrderPValueOrthoT.Rd.
-4.  Switched selected \dontrun{} to \donttest{} in documentation files BLlo.Rd,
+-  Switched selected \dontrun{} to \donttest{} in documentation files BLlo.Rd,
       critK10.Rd (also added another example that does not use the GGBK),
       MGBT.Rd, MGBT-package.Rd, and RthOrderPValueOrthoT.Rd.
-5.  Confirmed passage of R CMD check --as-cran --run-donttest MGBT
-6.  Added note about the deliberate non-need of the dataRetrieval package for MGBT
+-  Confirmed passage of R CMD check --as-cran --run-donttest MGBT
+-  Added note about the deliberate non-need of the dataRetrieval package for MGBT
       related to the \dontrun{} use in makeWaterYear.Rd, plotPeaks.Rd, and
       splitPeakCodes.Rd.
-7.  Added pairing of opar <- par(no.readonly=TRUE) ... on.exit(par(opar))
+-  Added pairing of opar <- par(no.readonly=TRUE) ... on.exit(par(opar))
       in plotPeaks.R and added xlab/ylab in the plotPeaks.Rd \dontrun{} examples.
-8.  Added pairing of the following commands in plotFFQevol.Rd for restoration of 
+-  Added pairing of the following commands in plotFFQevol.Rd for restoration of
       defaults:  opts <- options(scipen=7)     ...  options(opts)
                  opar <- par(no.readonly=TRUE) ...  par(opar)
-9.  Added path=tempdir() in plotFFQevol.R with argument silent message() of file 
+-  Added path=tempdir() in plotFFQevol.R with argument silent message() of file
       locations.
 
 
-1.0.0 -- 2019-09-25
-1.  First attempt for a CRAN release (GitLab tagged "v1.0.0")
+Changes in version 1.0.0 (2019-09-25)
+-  First attempt for a CRAN release (GitLab tagged "v1.0.0")
 
 
-0.9.9 -- 2019-09-24
-1.  Preparing various files for the prospect of being publically available as
+Changes in version 0.8.1 (2019-09-24)
+-  Preparing various files for the prospect of being publically available as
       approved software by USGS along https://code.usgs.gov/water/stats/MGBT.
 
 
-0.9.4 -- 2019-08-28
-1.  Adjusted plotPeaks.R/Rd with coordination with Nancy Barth, to use D as the
-      plotting character instead of the diamond, and updated ./inst/legend accordingly.
-2.  Adjusted beginning of the suite of MGBT*() functions to test for as.data.frame and
-      then attempt to extract a peak_va columns and added as.numeric conversion. This
-      accelerates using the MGBT() functions with data directly from USGS NWIS.
+Changes in version 0.7.1 (2019-08-28)
+-  Adjusted plotPeaks.R/Rd with coordination with Nancy Barth, to use D as the
+      plotting character instead of the diamond, and updated ./inst/legend
+      accordingly.
+-  Adjusted beginning of the suite of MGBT*() functions to test for as.data.frame
+      and then attempt to extract a peak_va columns and added as.numeric conversion.
+      This accelerates using the MGBT() functions with data directly from USGS NWIS.
 
 
-0.9.3 -- 2019-08-13
-1.  Adjustments to supporting files (not .R or .Rd) in preparation for bureau approval
+Changes in version 0.6.1 (2019-08-13)
+-  Adjustments to supporting files (not .R or .Rd) in preparation for bureau approval
       in parallel to working on the DOI number.
 
 
-0.9.2 -- 2019-08-05
-1.  Adjustments to supporting files (not .R or .Rd) in preparation for bureau approval.
+Changes in version 0.5.1 (2019-08-05)
+-  Adjustments to supporting files (not .R or .Rd) in preparation for bureau approval.
 
 
-0.9.1 -- 2019-07-30
-1.  Auditing package README files as further preparation for publication.
-2.  Added the zzz.R for the .onAttach().
+Changes in version 0.4.1 (2019-07-30)
+-  Auditing package README files as further preparation for publication.
+-  Added the zzz.R for the .onAttach().
 
 
-0.7.9 -- 2019-07-27
-1.  Added as.numeric() casing of gage_ht inside splitPeakCodes().
-2.  Made many extensions to README.md in response to Nancy Barth peer review along with
-      phone discussions with John England (2019-05-26).
+Changes in version 0.1.6 (2019-07-27)
+-  Added as.numeric() casing of gage_ht inside splitPeakCodes().
+-  Made many extensions to README.md in response to Nancy Barth peer review
+      along with phone discussions with John England (2019-05-26).
 
 
-0.7.8 -- 2019-07-25
-1.  Added support for the "O" discharge qualification code that was brought to the
-      authors' attention by Nancy Barth. Documentation upgrade in MGBT-package.Rd from
-      John England recommendations.
+Changes in version 0.1.5 (2019-07-25)
+-  Added support for the "O" discharge qualification code that was brought to the
+      authors' attention by Nancy Barth. Documentation upgrade in MGBT-package.Rd
+      from John England recommendations.
 
 
-0.7.7 -- 2019-05-21
-1.  Added more features to plotPeaks() to plot more nuances of the peak database
+Changes in version 0.1.4 (2019-05-21)
+-  Added more features to plotPeaks() to plot more nuances of the peak database
       related to presence of gage height but no discharge and plotting when double
       missing discharge and gage height exists.
 
 
-0.7.6 -- 2019-03-30
-1.  Another editing pass on the documentation.
+Changes in version 0.1.3 (2019-03-30)
+-  Another editing pass on the documentation.
 
 
-0.7.5 -- 2019-02-27
-1. Added warning to multiple gages in splitPeakCodes() and early return NULL.
+Changes in version 0.1.2 (2019-02-27)
+-  Added warning to multiple gages in splitPeakCodes() and early return NULL.
      This is related to data-mining scale testing on a project of one of the authors.
      Also minor adjustments to splitPeakCodes.Rd.
 
 
-0.7.4 -- 2019-02-01
-1.  Corrected the terminal year in splitPeakCodes().
-
-
-0.7.3--Documentation audit.
-
-
-0.7.2 -— Manually plotting the vertical axes in plotPeaks().
-
-
-0.7.1 -- Slight interfacing fix in plotPeaks().
-
-
-0.0.6 -- Continued interest in the project during summer 2018
-1.  Added plotPeaks(), makeWaterYear(), and makeWaterYear().
-2.  The lmomco package suggested as it is needed for plotPeaks().
-
-
-0.0.1 -- Creation of the project during summer 2017
+Changes in version 0.1.1 (2019-02-01)
+-  Corrected the terminal year in splitPeakCodes().
